@@ -15,13 +15,11 @@ export const loader = async ({ request }: LoaderArgs) => {
 export default function Index() {
   return (
     <Layout>
-      <div className="m-auto">
-        <img
-          src={logo}
-          alt="Camilili Design"
-          className="max-h-96 max-w-full object-contain"
-        />
-      </div>
+      <img
+        src={logo}
+        alt="Camilili Design"
+        className="mx-auto my-32 max-h-96 max-w-full object-contain"
+      />
     </Layout>
   );
 }

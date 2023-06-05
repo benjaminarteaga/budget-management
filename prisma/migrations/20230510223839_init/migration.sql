@@ -15,15 +15,17 @@ CREATE TABLE "Password" (
 );
 
 -- CreateTable
-CREATE TABLE "Note" (
+CREATE TABLE "Material" (
     "id" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "body" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "price" INTEGER NOT NULL,
+    "stock" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "userId" TEXT NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
-    CONSTRAINT "Note_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Material_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -36,4 +38,4 @@ CREATE UNIQUE INDEX "Password_userId_key" ON "Password"("userId");
 ALTER TABLE "Password" ADD CONSTRAINT "Password_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Note" ADD CONSTRAINT "Note_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Material" ADD CONSTRAINT "Material_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
