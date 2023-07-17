@@ -13,15 +13,17 @@ export function getMaterialListItems({ userId }: { userId: User["id"] }) {
 export function createMaterial({
   name,
   price,
+  unitPrice,
   stock,
   userId,
-}: Pick<Material, "name" | "price" | "stock"> & {
+}: Pick<Material, "name" | "price" | "unitPrice" | "stock"> & {
   userId: User["id"];
 }) {
   return prisma.material.create({
     data: {
       name,
       price,
+      unitPrice,
       stock,
       user: {
         connect: {

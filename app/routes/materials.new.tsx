@@ -3,6 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import { createMaterial } from "~/models/material.server";
 import { requireUserId } from "~/session.server";
 import type { ActionArgs } from "@remix-run/node";
+import { useState } from "react";
 
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);
@@ -11,6 +12,7 @@ export async function action({ request }: ActionArgs) {
   const name = formData.get("name");
   const price = +(formData.get("price") as string);
   const stock = +(formData.get("stock") as string);
+  const unitPrice = +(formData.get("unitPrice") as string);
 
   if (typeof name !== "string" || name.length === 0) {
     return json(
@@ -33,16 +35,31 @@ export async function action({ request }: ActionArgs) {
     );
   }
 
-  const material = await createMaterial({ name, price, stock, userId });
+  if (typeof unitPrice !== "number" || unitPrice <= 0) {
+    return json(
+      { errors: { body: null, title: "Precio unitario es requerido" } },
+      { status: 400 }
+    );
+  }
 
-  console.log(material);
+  const material = await createMaterial({
+    name,
+    price,
+    unitPrice,
+    stock,
+    userId,
+  });
+
   return redirect("/materials");
 }
 
 export default function NewMaterialPage() {
+  const [stock, setStock] = useState(0);
+  const [price, setPrice] = useState(0);
+
   return (
     <>
-      <div className="card mx-auto">
+      <div className="card mx-auto bg-slate-50">
         <div className="card-body">
           <div className="mx-auto flex w-full max-w-sm flex-col gap-6">
             <div className="flex flex-col items-center">
@@ -65,17 +82,6 @@ export default function NewMaterialPage() {
                   </span>
                 </label> */}
               </div>
-              <div className="form-field">
-                <label className="form-label">Precio</label>
-                <div className="form-control">
-                  <input
-                    placeholder="0000"
-                    type="text"
-                    className="input max-w-full"
-                    name="price"
-                  />
-                </div>
-              </div>
 
               <div className="form-field">
                 <label className="form-label">Cantidad</label>
@@ -85,9 +91,47 @@ export default function NewMaterialPage() {
                     type="text"
                     className="input max-w-full"
                     name="stock"
+                    onChange={(e) => setStock(parseInt(e.target.value))}
                   />
                 </div>
               </div>
+
+              <div className="form-field">
+                <label className="form-label">Precio</label>
+                <div className="form-control">
+                  <input
+                    placeholder="0000"
+                    type="text"
+                    className="input max-w-full"
+                    name="price"
+                    onChange={(e) => setPrice(parseInt(e.target.value))}
+                  />
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label className="form-label">Precio Unitario</label>
+                <div className="form-control">
+                  <input
+                    placeholder="0000"
+                    type="text"
+                    className="input max-w-full"
+                    name="unitPrice"
+                    value={price / stock}
+                    readOnly
+                  />
+                </div>
+              </div>
+
+              {/* <div className="form-field">
+                <label className="form-label">Tipo</label>
+                <div className="form-control">
+                  <select className="select">
+                    <option>Unidad</option>
+                    <option>Paquete</option>
+                  </select>
+                </div>
+              </div> */}
 
               <div className="form-field pt-5">
                 <div className="form-control justify-between">
