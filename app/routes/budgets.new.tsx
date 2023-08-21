@@ -1,15 +1,31 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
+import { Form, useLoaderData } from "@remix-run/react";
 
 // import { getNoteListItems } from "~/models/note.server";
 import { requireUserId } from "~/session.server";
-import { useUser } from "~/utils";
-import Layout from "./_layout";
-import Autocomplete from "~/components/Autocomplete";
+// import { useUser } from "~/utils";
+// import Layout from "./_layout";
+
 import { PlusIcon } from "@heroicons/react/20/solid";
 import { useState } from "react";
 import { getMaterialListItems } from "~/models/material.server";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Divider,
+  Input,
+  Select,
+  SelectItem,
+  Spacer,
+} from "@nextui-org/react";
+import { v4 as uuid } from "uuid";
+
+type Material = {
+  uuid: string;
+};
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await requireUserId(request);
@@ -21,57 +37,87 @@ export const loader = async ({ request }: LoaderArgs) => {
 export default function NewBudgetPage() {
   const data = useLoaderData<typeof loader>();
 
-  const [inputsAutocomplete, setInputsAutocomplete] = useState<any[]>([]);
+  console.log({ data });
 
-  const handleNewMaterial = () => {
-    const random = Math.random().toString(6);
+  const [materials, setMaterials] = useState<Material[]>([]);
 
-    setInputsAutocomplete([
-      ...inputsAutocomplete,
-      <div className="relative mb-3 mt-8 w-full" key={random} id={random}>
-        <hr />
-        {/* <label className="mb-2 block text-sm font-bold uppercase text-slate-600">
-          
-        </label> */}
-        <Autocomplete data={data} />
-        <input type="text" />
-      </div>,
-    ]);
+  const handleAddMaterial = () => {
+    const id = uuid();
+
+    setMaterials((prevState) => [...prevState, { uuid: id }]);
   };
 
   return (
-    <div className="mx-auto max-w-xl">
-      <div className="relative mb-6 flex w-full min-w-0 flex-col break-words rounded-lg bg-slate-100 shadow-lg">
-        <div className="flex-auto p-5 lg:p-10">
-          <Form method="post">
-            <div className="relative mb-3 mt-8 w-full">
-              <label className="mb-2 block text-sm font-bold uppercase text-slate-600">
-                Nombre del presupuesto
-              </label>
-              <input
-                type="text"
-                placeholder="Nombre"
-                className="w-full rounded border-0 bg-white px-3 py-3 text-sm text-slate-600 placeholder-slate-300 shadow transition-all duration-150 ease-linear focus:outline-none focus:ring"
-              />
+    <Card className="mx-auto max-w-[400px]">
+      <CardHeader className="flex gap-3">
+        <h1 className="font-medium">
+          <span className="text-3xl">📑</span> Nuevo presupuesto
+        </h1>
+      </CardHeader>
+
+      <Divider />
+
+      <CardBody>
+        <Form method="post">
+          <Input type="text" label="Nombre del presupuesto" name="name" />
+
+          <Spacer y={4} />
+
+          <Divider />
+
+          <Spacer y={4} />
+
+          {materials.map((material, index) => (
+            <div key={material.uuid}>
+              <Select label="Agregar material" placeholder="Selecciona...">
+                {data.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name}
+                  </SelectItem>
+                ))}
+              </Select>
+
+              <Spacer y={4} />
+
+              <Input type="number" label="Cantidad" name="quantity" />
+
+              <Spacer y={4} />
+
+              <Divider />
+
+              <Spacer y={4} />
             </div>
+          ))}
 
-            <h3>Materiales</h3>
+          <div className="flex gap-4">
+            <Button
+              isIconOnly
+              color="success"
+              radius="full"
+              className="text-white"
+              aria-label="Like"
+              onClick={handleAddMaterial}
+              size="sm"
+            >
+              <PlusIcon />
+            </Button>
+            <span>Agregar material</span>
+          </div>
 
-            {inputsAutocomplete.map((input) => input)}
+          <Spacer y={8} />
 
-            <div className="relative mb-3 mt-8 w-full">
-              <button
-                type="button"
-                className="btn-circle btn-solid-success btn"
-                onClick={handleNewMaterial}
-              >
-                <PlusIcon />
-              </button>
-              <label>Agregar material</label>
-            </div>
-          </Form>
-        </div>
-      </div>
-    </div>
+          <Button
+            type="submit"
+            color="success"
+            variant="shadow"
+            className="text-white"
+            fullWidth
+            size="lg"
+          >
+            Guardar presupuesto
+          </Button>
+        </Form>
+      </CardBody>
+    </Card>
   );
 }

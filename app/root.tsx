@@ -12,6 +12,7 @@ import { cssBundleHref } from "@remix-run/css-bundle";
 
 import tailwindStylesheetUrl from "~/styles/tailwind.css";
 import { getUser } from "~/session.server";
+import { NextUIProvider } from "@nextui-org/react";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: tailwindStylesheetUrl },
@@ -32,10 +33,12 @@ export default function App() {
         <Links />
       </head>
       <body className="h-full">
-        <Outlet />
-        <ScrollRestoration />
-        <Scripts />
-        <LiveReload />
+        <NextUIProvider>
+          <Outlet />
+          <ScrollRestoration />
+          <Scripts />
+          <LiveReload />
+        </NextUIProvider>
       </body>
     </html>
   );

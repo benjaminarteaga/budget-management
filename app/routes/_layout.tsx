@@ -1,72 +1,85 @@
 import type { V2_MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 
-import { useUser } from "~/utils";
+// import { useUser } from "~/utils";
 import logo from "~/resources/logo.png";
+import {
+  Avatar,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Navbar,
+  NavbarBrand,
+  NavbarContent,
+  NavbarItem,
+} from "@nextui-org/react";
 
 export const meta: V2_MetaFunction = () => [{ title: "Remix Notes" }];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const user = useUser();
+  // const user = useUser();
 
   return (
-    <>
-      <header className="navbar">
-        <div className="navbar-start">
-          {/* <a className="navbar-item">Ripple UI</a> */}
-          <Link
-            to="/"
-            // className="text-white-500 flex text-3xl font-bold hover:text-gray-100"
-            className="navbar-item"
-          >
+    <div className="bg-background text-foreground light">
+      <Navbar
+        maxWidth="full"
+        isBordered
+        classNames={{ base: "bg-white drop-shadow" }}
+      >
+        <NavbarBrand>
+          <Link to="/">
             <img src={logo} alt="Camilili Design" className="max-h-11" />
           </Link>
-        </div>
-        <div className="navbar-center">
-          {/* <a className="navbar-item">Home</a>
-          <a className="navbar-item">About</a>
-          <a className="navbar-item">Contact</a> */}
-          <Link
-            to="/materials"
-            // className="text-white-400 mr-4 hover:text-gray-100"
-            className="navbar-item"
-          >
-            Materiales
-          </Link>
-          <Link
-            to="/budgets"
-            // className="text-white-400 mr-4 hover:text-gray-100"
-            className="navbar-item"
-          >
-            Presupuestos
-          </Link>
-        </div>
-        <div className="navbar-end">
-          {/* <a className="navbar-item">Home</a> */}
-          <div className="avatar-ring avatar avatar-md">
-            <div className="dropdown-container">
-              <div className="dropdown">
-                <label
-                  className="btn-ghost btn flex cursor-pointer px-0"
-                  tabIndex={0}
-                >
-                  <img src="https://i.pravatar.cc/150?img=37" alt="avatar" />
-                </label>
-                <div className="dropdown-menu-bottom-left dropdown-menu">
-                  {/* <a className="dropdown-item text-sm">Logout</a> */}
-                  <form action="/logout" method="post">
-                    <button type="submit" className="dropdown-item text-sm">
-                      Logout
-                    </button>
-                  </form>
-                  {/* <a tabIndex="-1" className="dropdown-item text-sm">Account settings</a>
-                  <a tabIndex="-1" className="dropdown-item text-sm">Subscriptions</a> */}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+        </NavbarBrand>
+
+        <NavbarContent className="hidden gap-4 sm:flex" justify="center">
+          <NavbarItem>
+            <Link to="/materials" color="foreground">
+              Materiales
+            </Link>
+          </NavbarItem>
+          <NavbarItem>
+            <Link to="/budgets" color="foreground">
+              Presupuestos
+            </Link>
+          </NavbarItem>
+        </NavbarContent>
+
+        <NavbarContent as="div" justify="end">
+          <Dropdown placement="bottom-end">
+            <DropdownTrigger>
+              <Avatar
+                isBordered
+                as="button"
+                className="transition-transform"
+                color="secondary"
+                name="Jason Hughes"
+                size="sm"
+                src="https://i.pravatar.cc/150?img=37"
+              />
+              {/* <img src="https://i.pravatar.cc/150?img=37" alt="avatar" /> */}
+            </DropdownTrigger>
+            <DropdownMenu aria-label="Profile Actions" variant="flat">
+              <DropdownItem key="profile" className="h-14 gap-2">
+                <p className="font-semibold">Signed in as</p>
+                <p className="font-semibold">zoey@example.com</p>
+              </DropdownItem>
+              <DropdownItem key="settings">My Settings</DropdownItem>
+              <DropdownItem key="team_settings">Team Settings</DropdownItem>
+              <DropdownItem key="analytics">Analytics</DropdownItem>
+              <DropdownItem key="system">System</DropdownItem>
+              <DropdownItem key="configurations">Configurations</DropdownItem>
+              <DropdownItem key="help_and_feedback">
+                Help & Feedback
+              </DropdownItem>
+              <DropdownItem key="logout" color="danger">
+                Log Out
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+        </NavbarContent>
+      </Navbar>
 
       <main>{children}</main>
 
@@ -108,6 +121,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <main className="flex h-full">{children}</main>
       </div> */}
-    </>
+    </div>
   );
 }

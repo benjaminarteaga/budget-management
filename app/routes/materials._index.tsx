@@ -4,6 +4,16 @@ import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import { requireUserId } from "~/session.server";
 import { getMaterialListItems } from "~/models/material.server";
 import { json } from "@remix-run/node";
+import {
+  Button,
+  Spacer,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
+} from "@nextui-org/react";
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await requireUserId(request);
@@ -18,35 +28,36 @@ export default function MaterialIndexPage() {
 
   return (
     <>
-      <Link to="new" className="btn-success btn-rounded btn">
-        <PlusCircleIcon className="h-6 w-6" /> Nuevo material
+      <Link to="new">
+        <Button
+          color="success"
+          disableRipple
+          startContent={<PlusCircleIcon className="h-6 w-6" />}
+          variant="shadow"
+          className="text-white"
+        >
+          Nuevo material
+        </Button>
       </Link>
 
-      <div className="my-6 flex w-full overflow-x-auto">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Price</th>
-              <th>Stock</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.materialListItems.map((material) => (
-              <tr key={material.id}>
-                <td>{material.name}</td>
-                <td>{material.price}</td>
-                <td>{material.stock}</td>
-              </tr>
-            ))}
-            <tr>
-              <th>1</th>
-              <td>Cy Ganderton</td>
-              <td>Quality Control Specialist</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <Spacer y={4} />
+
+      <Table aria-label="Example static collection table">
+        <TableHeader>
+          <TableColumn>NOMBRE</TableColumn>
+          <TableColumn>PRECIO</TableColumn>
+          <TableColumn>STOCK</TableColumn>
+        </TableHeader>
+        <TableBody>
+          {data.materialListItems.map((material) => (
+            <TableRow key={material.id}>
+              <TableCell>{material.name}</TableCell>
+              <TableCell>{material.price}</TableCell>
+              <TableCell>{material.stock}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </>
   );
 }
