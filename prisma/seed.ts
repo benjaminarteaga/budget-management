@@ -24,21 +24,35 @@ async function seed() {
     },
   });
 
-  // await prisma.note.create({
-  //   data: {
-  //     title: "My first note",
-  //     body: "Hello, world!",
-  //     userId: user.id,
-  //   },
-  // });
+  await prisma.material.create({
+    data: {
+      name: "Hojas",
+      price: 4500,
+      unitPrice: 9,
+      stock: 500,
+      userId: user.id,
+    },
+  });
 
-  // await prisma.note.create({
-  //   data: {
-  //     title: "My second note",
-  //     body: "Hello, world!",
-  //     userId: user.id,
-  //   },
-  // });
+  await prisma.material.create({
+    data: {
+      name: "Tapas",
+      price: 10000,
+      unitPrice: 500,
+      stock: 20,
+      userId: user.id,
+    },
+  });
+
+  await prisma.material.create({
+    data: {
+      name: "Resortes",
+      price: 2800,
+      unitPrice: 10,
+      stock: 280,
+      userId: user.id,
+    },
+  });
 
   console.log(`Database has been seeded. 🌱`);
 }
