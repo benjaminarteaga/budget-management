@@ -12,6 +12,7 @@ import {
   Divider,
   Input,
   Spacer,
+  Switch,
 } from "@nextui-org/react";
 
 export async function action({ request }: ActionArgs) {
@@ -19,8 +20,11 @@ export async function action({ request }: ActionArgs) {
 
   const formData = await request.formData();
   const name = formData.get("name");
+  const quantity = +(formData.get("quantity") as string);
+  const stock = formData.get("stock")
+    ? +(formData.get("stock") as string)
+    : quantity;
   const price = +(formData.get("price") as string);
-  const stock = +(formData.get("stock") as string);
   const unitPrice = +(formData.get("unitPrice") as string);
 
   if (typeof name !== "string" || name.length === 0) {
@@ -30,16 +34,23 @@ export async function action({ request }: ActionArgs) {
     );
   }
 
-  if (typeof price !== "number" || price <= 0) {
+  if (typeof quantity !== "number" || quantity <= 0) {
     return json(
-      { errors: { body: null, title: "Precio es requerido" } },
+      { errors: { body: null, title: "Cantidad es requerido" } },
       { status: 400 }
     );
   }
 
   if (typeof stock !== "number" || stock <= 0) {
     return json(
-      { errors: { body: null, title: "Cantidad es requerido" } },
+      { errors: { body: null, title: "Stock es requerido" } },
+      { status: 400 }
+    );
+  }
+
+  if (typeof price !== "number" || price <= 0) {
+    return json(
+      { errors: { body: null, title: "Precio es requerido" } },
       { status: 400 }
     );
   }
@@ -53,9 +64,10 @@ export async function action({ request }: ActionArgs) {
 
   await createMaterial({
     name,
+    stock,
+    quantity,
     price,
     unitPrice,
-    stock,
     userId,
   });
 
@@ -63,15 +75,16 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function NewMaterialPage() {
-  const [stock, setStock] = useState(0);
+  const [quantity, setStock] = useState(0);
   const [price, setPrice] = useState(0);
+  const [isSelected, setIsSelected] = useState(true);
 
   const unitPrice = useMemo(() => {
-    if (stock > 0 && price > 0) {
-      return price / stock + "";
+    if (quantity > 0 && price > 0) {
+      return price / quantity + "";
     }
     return "0";
-  }, [stock, price]);
+  }, [quantity, price]);
 
   return (
     <Card className="mx-auto max-w-[400px]">
@@ -84,21 +97,46 @@ export default function NewMaterialPage() {
       <CardBody>
         <Form method="post">
           <Input type="text" label="Nombre" name="name" />
+
           <Spacer y={4} />
+
           <Input
             type="text"
             label="Cantidad"
-            name="stock"
+            name="quantity"
             onChange={(e) => setStock(parseInt(e.target.value))}
           />
+
           <Spacer y={4} />
+
+          <Switch
+            isSelected={isSelected}
+            onValueChange={setIsSelected}
+            size="sm"
+            color="secondary"
+          >
+            Stock inicial igual a la cantidad
+          </Switch>
+
+          {!isSelected && (
+            <>
+              <Spacer y={4} />
+
+              <Input type="text" label="Stock inicial" name="stock" />
+            </>
+          )}
+
+          <Spacer y={4} />
+
           <Input
             type="text"
             label="Precio"
             name="price"
             onChange={(e) => setPrice(parseInt(e.target.value))}
           />
+
           <Spacer y={4} />
+
           <Input
             type="text"
             label="Precio Unitario"
@@ -106,6 +144,7 @@ export default function NewMaterialPage() {
             value={unitPrice || ""}
             readOnly
           />
+
           <Spacer y={4} />
 
           <Button

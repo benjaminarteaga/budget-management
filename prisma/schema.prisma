@@ -29,9 +29,10 @@ model Password {
 model Material {
   id        Int    @id @default(autoincrement())
   name      String
+  stock     Int
+  quantity  Int
   price     Int
   unitPrice Int
-  stock     Int
 
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId Int

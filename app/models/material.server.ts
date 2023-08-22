@@ -5,26 +5,28 @@ import { prisma } from "~/db.server";
 export function getMaterialListItems({ userId }: { userId: User["id"] }) {
   return prisma.material.findMany({
     where: { userId },
-    select: { id: true, name: true, price: true, stock: true },
+    // select: { id: true, name: true, price: true, stock: true },
     // orderBy: { updatedAt: "desc" },
   });
 }
 
 export function createMaterial({
   name,
+  stock,
+  quantity,
   price,
   unitPrice,
-  stock,
   userId,
-}: Pick<Material, "name" | "price" | "unitPrice" | "stock"> & {
+}: Pick<Material, "name" | "stock" | "quantity" | "price" | "unitPrice"> & {
   userId: User["id"];
 }) {
   return prisma.material.create({
     data: {
       name,
+      stock,
+      quantity,
       price,
       unitPrice,
-      stock,
       user: {
         connect: {
           id: userId,

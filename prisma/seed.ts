@@ -27,9 +27,10 @@ async function seed() {
   await prisma.material.create({
     data: {
       name: "Hojas",
+      stock: 500,
+      quantity: 500,
       price: 4500,
       unitPrice: 9,
-      stock: 500,
       userId: user.id,
     },
   });
@@ -37,9 +38,10 @@ async function seed() {
   await prisma.material.create({
     data: {
       name: "Tapas",
+      stock: 20,
+      quantity: 20,
       price: 10000,
       unitPrice: 500,
-      stock: 20,
       userId: user.id,
     },
   });
@@ -47,9 +49,10 @@ async function seed() {
   await prisma.material.create({
     data: {
       name: "Resortes",
+      stock: 20,
+      quantity: 20,
       price: 2800,
       unitPrice: 10,
-      stock: 280,
       userId: user.id,
     },
   });

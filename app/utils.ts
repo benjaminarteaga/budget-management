@@ -69,3 +69,20 @@ export function useUser(): User {
 export function validateEmail(email: unknown): email is string {
   return typeof email === "string" && email.length > 3 && email.includes("@");
 }
+
+export const formatInt = (value: number) => {
+  return new Intl.NumberFormat("es-CL").format(value);
+};
+
+export const formatDecimal = (value: number) => {
+  return new Intl.NumberFormat("es-CL", { maximumFractionDigits: 2 }).format(
+    value
+  );
+};
+
+export const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+  }).format(value);
+};

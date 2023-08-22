@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@nextui-org/react";
+import { formatCurrency, formatInt } from "~/utils";
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await requireUserId(request);
@@ -42,18 +43,22 @@ export default function MaterialIndexPage() {
 
       <Spacer y={4} />
 
-      <Table aria-label="Example static collection table">
+      <Table layout="fixed" aria-label="Lista de materiales">
         <TableHeader>
           <TableColumn>NOMBRE</TableColumn>
-          <TableColumn>PRECIO</TableColumn>
           <TableColumn>STOCK</TableColumn>
+          <TableColumn>CANTIDAD INICIAL</TableColumn>
+          <TableColumn>PRECIO</TableColumn>
+          <TableColumn>PRECIO UNITARIO</TableColumn>
         </TableHeader>
         <TableBody>
           {data.materialListItems.map((material) => (
             <TableRow key={material.id}>
               <TableCell>{material.name}</TableCell>
-              <TableCell>{material.price}</TableCell>
-              <TableCell>{material.stock}</TableCell>
+              <TableCell>{formatInt(material.stock)}</TableCell>
+              <TableCell>{formatInt(material.quantity)}</TableCell>
+              <TableCell>{formatCurrency(material.price)}</TableCell>
+              <TableCell>{formatCurrency(material.unitPrice)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
