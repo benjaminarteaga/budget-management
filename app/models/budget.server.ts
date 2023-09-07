@@ -10,6 +10,33 @@ export function getBudgetListItems({ userId }: { userId: User["id"] }) {
           material: true,
         },
       },
+      status: true,
+    },
+  });
+}
+
+export function getBudgetItem({
+  userId,
+  id,
+}: {
+  userId: User["id"];
+  id?: string;
+}) {
+  if (id === undefined) {
+    throw new Error("El campo 'id' es obligatorio.");
+  }
+
+  return prisma.budget.findUnique({
+    where: {
+      id: +id,
+    },
+    include: {
+      materials: {
+        include: {
+          material: true,
+        },
+      },
+      status: true,
     },
   });
 }
@@ -35,7 +62,20 @@ export function createBudget({
     },
   }));
 
-  return prisma.budget.create({
+  const decrementMaterials = materials.map((m) =>
+    prisma.material.update({
+      where: {
+        id: +m.id,
+      },
+      data: {
+        stock: {
+          decrement: +m.quantity,
+        },
+      },
+    })
+  );
+
+  const createBudget = prisma.budget.create({
     data: {
       name,
       materials: {
@@ -48,4 +88,6 @@ export function createBudget({
       },
     },
   });
+
+  return prisma.$transaction([...decrementMaterials, createBudget]);
 }

@@ -24,10 +24,6 @@ import {
 import { v4 as uuid } from "uuid";
 import { createBudget } from "~/models/budget.server";
 
-type Material = {
-  uuid: string;
-};
-
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);
 
@@ -97,7 +93,7 @@ export async function action({ request }: ActionArgs) {
     userId,
   });
 
-  return redirect("/budget");
+  return redirect("/budgets");
 }
 
 export const loader = async ({ request }: LoaderArgs) => {
@@ -109,8 +105,6 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 export default function NewBudgetPage() {
   const data = useLoaderData<typeof loader>();
-
-  console.log({ data });
 
   const [materials, setMaterials] = useState<Material[]>([]);
 
@@ -198,3 +192,7 @@ export default function NewBudgetPage() {
     </Card>
   );
 }
+
+type Material = {
+  uuid: string;
+};
