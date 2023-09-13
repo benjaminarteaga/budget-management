@@ -15,6 +15,7 @@ import customStylesheetUrl from "~/styles/style.css";
 import tailwindStylesheetUrl from "~/styles/tailwind.css";
 import { getUser } from "~/session.server";
 import { NextUIProvider } from "@nextui-org/react";
+import { Toaster } from "sonner";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: fontStylesheetUrl },
@@ -38,6 +39,7 @@ export default function App() {
       </head>
       <body className="h-full">
         <NextUIProvider>
+          <Toaster position="bottom-right" richColors />
           <Outlet />
           <ScrollRestoration />
           <Scripts />
