@@ -1,10 +1,16 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { Form, useActionData, useSubmit } from "@remix-run/react";
 
 import { requireUserId } from "~/session.server";
 
-import { type ChangeEvent, useState, useMemo, useCallback } from "react";
+import {
+  type ChangeEvent,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import { getMaterialListItems } from "~/models/material.server";
 import {
   type Selection,
@@ -28,33 +34,32 @@ import {
 import { createBudget } from "~/models/budget.server";
 import { formatCurrency, formatInt } from "~/utils";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
-import { TrashIcon, ArrowSmallRightIcon } from "@heroicons/react/24/outline";
+import {
+  TrashIcon,
+  ArrowSmallRightIcon,
+  PencilSquareIcon,
+} from "@heroicons/react/24/outline";
 
 import { toast } from "sonner";
 
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);
 
-  const formData = await request.formData();
-
-  const name = formData.get("name");
-  const materials = formData.getAll("materials[]");
-  const quantity = formData.getAll("quantity[]");
-
-  const materialsArray = [];
-
-  for (let i = 0; i < materials.length; i++) {
-    const material = {
-      id: materials[i],
-      quantity: quantity[i],
-    };
-
-    materialsArray.push(material);
-  }
+  const {
+    name,
+    materials,
+    salesPrice,
+  }: {
+    name: string;
+    materials: MaterialList[];
+    salesPrice: string;
+  } = await request.json();
 
   if (typeof name !== "string" || name.length === 0) {
     return json(
-      { errors: { body: null, title: "Asignale un nombre a tu presupuesto" } },
+      {
+        error: "Asignale un nombre a tu presupuesto",
+      },
       { status: 400 }
     );
   }
@@ -62,42 +67,32 @@ export async function action({ request }: ActionArgs) {
   if (!materials || materials.length <= 0) {
     return json(
       {
-        errors: {
-          body: null,
-          title: "Agrega al menos un material o valida el nombre",
-        },
+        error: "Agrega al menos un material",
       },
       { status: 400 }
     );
   }
 
-  if (!quantity || quantity.length <= 0) {
+  if (!salesPrice || +salesPrice === 0) {
     return json(
       {
-        errors: {
-          body: null,
-          title: "Agrega al menos un material o valida la cantidad",
-        },
+        error: "Agrega el precio de venta",
       },
       { status: 400 }
     );
   }
 
-  if (materials.length !== quantity.length) {
-    return json(
-      {
-        errors: {
-          body: null,
-          title: "El total de materiales y cantidades no coinciden",
-        },
-      },
-      { status: 400 }
-    );
-  }
+  console.log("save input", {
+    name,
+    materials,
+    salesPrice: +salesPrice,
+    userId,
+  });
 
   await createBudget({
     name,
-    materials: materialsArray,
+    materials,
+    salesPrice: +salesPrice,
     userId,
   });
 
@@ -114,6 +109,10 @@ export const loader = async ({ request }: LoaderArgs) => {
 export default function NewBudgetPage() {
   const data = useTypedLoaderData<typeof loader>();
 
+  const error = useActionData<typeof action>();
+
+  const [name, setName] = useState<string>("");
+
   const [materials, setMaterials] = useState<MaterialList[]>([]);
 
   const [selected, setSelected] = useState<Selection>(new Set([]));
@@ -121,6 +120,18 @@ export default function NewBudgetPage() {
   const [material, setMaterial] = useState<string>("");
 
   const [quantity, setQuantity] = useState<string>("");
+
+  const [salesPrice, setSalesPrice] = useState<string>("");
+
+  const [editPrice, setEditPrice] = useState<boolean>(false);
+
+  const submit = useSubmit();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error.error);
+    }
+  }, [error]);
 
   /**
    * @description
@@ -282,6 +293,19 @@ export default function NewBudgetPage() {
     }
   }, [material, quantity]);
 
+  const handleSubmitForm = () => {
+    const body = {
+      name,
+      materials,
+      salesPrice,
+    };
+
+    submit(body, {
+      method: "post",
+      encType: "application/json",
+    });
+  };
+
   const total = materials.reduce(
     (sum, material) => sum + +material.quantity * material.unitPrice,
     0
@@ -300,7 +324,17 @@ export default function NewBudgetPage() {
       <CardBody>
         <div className="flex gap-4">
           <Form method="post" className="flex-auto">
-            <Input type="text" label="Nombre del presupuesto" name="name" />
+            <Input
+              type="text"
+              label="Nombre del presupuesto"
+              name="name"
+              value={name}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                const value = e.target.value;
+
+                setName(value);
+              }}
+            />
 
             <Spacer y={4} />
 
@@ -356,13 +390,15 @@ export default function NewBudgetPage() {
 
             <Spacer y={8} />
 
+            <input type="hidden" name="salesPrice" value={salesPrice ?? 0} />
+
             <Button
-              type="submit"
               color="success"
               variant="shadow"
               className="text-white"
               fullWidth
               size="lg"
+              onClick={handleSubmitForm}
             >
               Guardar presupuesto
             </Button>
@@ -380,8 +416,57 @@ export default function NewBudgetPage() {
 
                   <div className="flex justify-between px-3">
                     <span className="font-bold">TOTAL</span>
+                    <span className="font-bold">{formatCurrency(total)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between px-3">
+                    <span className=" font-bold">PRECIO DE VENTA</span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        isIconOnly
+                        radius="full"
+                        size="sm"
+                        color="success"
+                        variant="shadow"
+                        onClick={() => setEditPrice((prevState) => !prevState)}
+                      >
+                        <PencilSquareIcon className={"h-5 w-5 text-white"} />
+                      </Button>
+                      {editPrice && (
+                        <Input
+                          autoFocus
+                          type="number"
+                          size="sm"
+                          variant="bordered"
+                          value={salesPrice}
+                          onBlur={() => setEditPrice(false)}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+
+                            setSalesPrice(value);
+                          }}
+                          startContent={
+                            <div className="pointer-events-none flex items-center">
+                              <span className="text-small text-default-400">
+                                $
+                              </span>
+                            </div>
+                          }
+                        />
+                      )}
+
+                      {!editPrice && (
+                        <span className=" text-end font-bold">
+                          {formatCurrency(+salesPrice || 0)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between px-3">
+                    <span className="font-bold">GANANCIA</span>
                     <span className="font-bold">
-                      {total && formatCurrency(total)}
+                      {formatCurrency(+salesPrice - total)}
                     </span>
                   </div>
                 </>

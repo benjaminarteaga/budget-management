@@ -19,6 +19,7 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { getBudgetListItems, type getBudgetItem } from "~/models/budget.server";
 import type { Prisma } from "@prisma/client";
+import { formatCurrency, formatInt } from "~/utils";
 
 export type BudgetWithRelations = Prisma.PromiseReturnType<
   typeof getBudgetItem
@@ -51,7 +52,7 @@ export default function BudgetIndexPage() {
 
   return (
     <div className="flex gap-6">
-      <div className="grow">
+      <div className="flex-[70%]">
         <Link to="new">
           <Button
             color="success"
@@ -66,19 +67,29 @@ export default function BudgetIndexPage() {
 
         <Spacer y={4} />
 
-        <Table aria-label="Example static collection table">
+        <Table
+          layout="fixed"
+          classNames={{ th: "text-center", td: "text-center" }}
+        >
           <TableHeader>
             <TableColumn>NOMBRE</TableColumn>
             <TableColumn>MATERIALES</TableColumn>
             <TableColumn>CANTIDAD</TableColumn>
+            <TableColumn>COSTO</TableColumn>
+            <TableColumn>PRECIO DE VENTA</TableColumn>
+            <TableColumn>GANANCIA</TableColumn>
             <TableColumn>ESTADO</TableColumn>
             <TableColumn>DETALLE</TableColumn>
           </TableHeader>
           <TableBody>
             {data.map((budget) => {
-              const { id, name, materials } = budget;
+              const { id, name, materials, salesPrice } = budget;
+
+              let cost = 0;
 
               const materialsArray = materials.map((material) => {
+                cost += material.material.unitPrice * material.quantity;
+
                 return {
                   name: material.material.name,
                   quantity: material.quantity,
@@ -89,7 +100,7 @@ export default function BudgetIndexPage() {
 
               return (
                 <TableRow key={id}>
-                  <TableCell rowSpan={materials.length}>{name}</TableCell>
+                  <TableCell>{name}</TableCell>
                   <TableCell>
                     {materialsArray.map(({ name }) => (
                       <>
@@ -98,13 +109,22 @@ export default function BudgetIndexPage() {
                       </>
                     ))}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-end">
                     {materialsArray.map(({ quantity }) => (
                       <>
-                        {quantity}
+                        {formatInt(quantity)}
                         <br />
                       </>
                     ))}
+                  </TableCell>
+                  <TableCell className="text-end">
+                    {formatCurrency(cost)}
+                  </TableCell>
+                  <TableCell className="text-end">
+                    {formatCurrency(salesPrice)}
+                  </TableCell>
+                  <TableCell className="text-end text-green-500">
+                    {formatCurrency(salesPrice - cost)}
                   </TableCell>
                   <TableCell>
                     <Chip radius="full" variant="flat" color={chipColor}>
@@ -128,7 +148,7 @@ export default function BudgetIndexPage() {
         </Table>
       </div>
 
-      <div className={isOpen ? "show" : "hide"}>
+      <div className={isOpen ? "show flex-[30%]" : "hide"} id="two">
         {detail && <BudgetDetail data={detail} />}
       </div>
     </div>

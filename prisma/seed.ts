@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { createBudget } from "~/models/budget.server";
 
 const prisma = new PrismaClient();
 
@@ -65,6 +66,26 @@ async function seed() {
         userId: user.id,
       },
     ],
+  });
+
+  await createBudget({
+    name: "Presupuesto de prueba",
+    materials: [
+      {
+        id: 1,
+        quantity: "50",
+      },
+      {
+        id: 2,
+        quantity: "2",
+      },
+      {
+        id: 3,
+        quantity: "1",
+      },
+    ],
+    salesPrice: 12000,
+    userId: 1,
   });
 
   console.log(`Database has been seeded. 🌱`);

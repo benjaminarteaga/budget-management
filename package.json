@@ -37,7 +37,7 @@
     "@headlessui/react": "^1.7.15",
     "@heroicons/react": "^2.0.17",
     "@isaacs/express-prometheus-middleware": "^1.2.1",
-    "@nextui-org/react": "^2.1.2",
+    "@nextui-org/react": "^2.1.13",
     "@prisma/client": "^5.2.0",
     "@remix-run/css-bundle": "1.19.3",
     "@remix-run/express": "1.19.3",

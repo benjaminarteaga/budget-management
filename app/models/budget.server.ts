@@ -44,13 +44,15 @@ export function getBudgetItem({
 export function createBudget({
   name,
   materials,
+  salesPrice,
   userId,
 }: Pick<Budget, "name"> & {
-  userId: User["id"];
   materials: {
-    id: FormDataEntryValue;
-    quantity: FormDataEntryValue;
+    id: number;
+    quantity: string;
   }[];
+  salesPrice: number;
+  userId: User["id"];
 }) {
   const materialsArray = materials.map((material) => ({
     quantity: +material.quantity,
@@ -75,9 +77,10 @@ export function createBudget({
     })
   );
 
-  const createBudget = prisma.budget.create({
+  const saveBudget = prisma.budget.create({
     data: {
       name,
+      salesPrice,
       materials: {
         create: materialsArray,
       },
@@ -89,5 +92,5 @@ export function createBudget({
     },
   });
 
-  return prisma.$transaction([...decrementMaterials, createBudget]);
+  return prisma.$transaction([...decrementMaterials, saveBudget]);
 }
