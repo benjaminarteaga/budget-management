@@ -1,5 +1,5 @@
 import type { LoaderArgs } from "@remix-run/node";
-import { PlusCircleIcon } from "@heroicons/react/24/solid";
+import { PencilIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
 import {
   Button,
   Chip,
@@ -20,6 +20,7 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { getBudgetListItems, type getBudgetItem } from "~/models/budget.server";
 import type { Prisma } from "@prisma/client";
 import { formatCurrency, formatInt } from "~/utils";
+import { TrashIcon } from "@heroicons/react/24/outline";
 
 export type BudgetWithRelations = Prisma.PromiseReturnType<
   typeof getBudgetItem
@@ -80,6 +81,7 @@ export default function BudgetIndexPage() {
             <TableColumn>GANANCIA</TableColumn>
             <TableColumn>ESTADO</TableColumn>
             <TableColumn>DETALLE</TableColumn>
+            <TableColumn>ACCIONES</TableColumn>
           </TableHeader>
           <TableBody>
             {data.map((budget) => {
@@ -139,6 +141,23 @@ export default function BudgetIndexPage() {
                       onClick={() => handleShowDetail(id)}
                     >
                       Ver detalle
+                    </Button>
+                  </TableCell>
+
+                  <TableCell>
+                    <Link to={`edit/${id}`}>
+                      <Button
+                        isIconOnly
+                        color="success"
+                        size="sm"
+                        className="mr-2"
+                      >
+                        <PencilIcon className={"h-4 w-4 text-white"} />
+                      </Button>
+                    </Link>
+
+                    <Button isIconOnly color="danger" size="sm">
+                      <TrashIcon className={"h-4 w-4"} />
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -94,3 +94,79 @@ export function createBudget({
 
   return prisma.$transaction([...decrementMaterials, saveBudget]);
 }
+
+export function updateBudget({
+  id,
+  name,
+  oldMaterials,
+  materials,
+  salesPrice,
+  userId,
+}: Pick<Budget, "id" | "name"> & {
+  oldMaterials: {
+    id: number;
+    quantity: string;
+  }[];
+  materials: {
+    id: number;
+    quantity: string;
+  }[];
+  salesPrice: number;
+  userId: User["id"];
+}) {
+  const removeMaterials = prisma.materialsOnBudgets.deleteMany({
+    where: {
+      budgetId: id,
+    },
+  });
+
+  const materialsArray = materials.map((material) => ({
+    quantity: Number(material.quantity),
+    assignedAt: new Date(),
+    material: {
+      connect: {
+        id: Number(material.id),
+      },
+    },
+  }));
+
+  const decrementMaterials = materials.map((m) => {
+    const old = oldMaterials.find((oldMaterial) => m.id === oldMaterial.id);
+    const quantityCalculated = Number(m.quantity) - Number(old?.quantity);
+
+    return prisma.material.update({
+      where: {
+        id: Number(m.id),
+      },
+      data: {
+        stock: {
+          decrement: quantityCalculated,
+        },
+      },
+    });
+  });
+
+  const updateBudget = prisma.budget.update({
+    where: {
+      id,
+    },
+    data: {
+      name,
+      salesPrice,
+      materials: {
+        create: materialsArray,
+      },
+      user: {
+        connect: {
+          id: userId,
+        },
+      },
+    },
+  });
+
+  return prisma.$transaction([
+    removeMaterials,
+    ...decrementMaterials,
+    updateBudget,
+  ]);
+}
