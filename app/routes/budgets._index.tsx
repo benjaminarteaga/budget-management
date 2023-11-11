@@ -10,10 +10,16 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@nextui-org/react";
-import { Link } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BudgetDetail from "~/components/BudgetDetail";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
@@ -36,141 +42,210 @@ export const loader = async ({ request }: LoaderArgs) => {
 export default function BudgetIndexPage() {
   const data = useTypedLoaderData<typeof loader>();
 
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-
   const [detail, setDetail] = useState<BudgetWithRelations>();
 
+  const [toDelete, setToDelete] = useState<BudgetWithRelations>();
+
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+
+  const fetcher = useFetcher();
+
+  useEffect(() => {
+    setToDelete(null);
+    setTimeout(() => onClose(), 2000);
+  }, [fetcher.data, onClose]);
+
   const handleShowDetail = (id: number) => {
-    if (isOpen) {
-      setIsOpen(false);
+    if (detail && detail.id === id) {
       setDetail(null);
       return;
     }
 
-    setIsOpen(true);
     setDetail(data.find((budget) => budget.id === id));
   };
 
+  const handleOpenModal = (id: number) => {
+    setToDelete(data.find((budget) => budget.id === id));
+    onOpen();
+  };
+
+  const handleCloseModal = () => {
+    setToDelete(null);
+    onClose();
+  };
+
+  const handleConfirmDelete = () => {
+    toDelete &&
+      fetcher.submit({}, { method: "post", action: `delete/${toDelete?.id}` });
+  };
+
   return (
-    <div className="flex gap-6">
-      <div className="flex-[70%]">
-        <Link to="new">
-          <Button
-            color="success"
-            disableRipple
-            startContent={<PlusCircleIcon className="h-6 w-6" />}
-            variant="shadow"
-            className="text-white"
+    <>
+      <div className="flex gap-6">
+        <div className="flex-[70%]">
+          <Link to="new">
+            <Button
+              color="success"
+              disableRipple
+              startContent={<PlusCircleIcon className="h-6 w-6" />}
+              variant="shadow"
+              className="text-white"
+            >
+              Nuevo presupuesto
+            </Button>
+          </Link>
+
+          <Spacer y={4} />
+
+          <Table
+            layout="fixed"
+            classNames={{ th: "text-center", td: "text-center" }}
           >
-            Nuevo presupuesto
-          </Button>
-        </Link>
+            <TableHeader>
+              <TableColumn>NOMBRE</TableColumn>
+              <TableColumn>MATERIALES</TableColumn>
+              <TableColumn>CANTIDAD</TableColumn>
+              <TableColumn>COSTO</TableColumn>
+              <TableColumn>PRECIO DE VENTA</TableColumn>
+              <TableColumn>GANANCIA</TableColumn>
+              <TableColumn>ESTADO</TableColumn>
+              <TableColumn>DETALLE</TableColumn>
+              <TableColumn>ACCIONES</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {data.map((budget) => {
+                const { id, name, materials, salesPrice } = budget;
 
-        <Spacer y={4} />
+                let cost = 0;
 
-        <Table
-          layout="fixed"
-          classNames={{ th: "text-center", td: "text-center" }}
-        >
-          <TableHeader>
-            <TableColumn>NOMBRE</TableColumn>
-            <TableColumn>MATERIALES</TableColumn>
-            <TableColumn>CANTIDAD</TableColumn>
-            <TableColumn>COSTO</TableColumn>
-            <TableColumn>PRECIO DE VENTA</TableColumn>
-            <TableColumn>GANANCIA</TableColumn>
-            <TableColumn>ESTADO</TableColumn>
-            <TableColumn>DETALLE</TableColumn>
-            <TableColumn>ACCIONES</TableColumn>
-          </TableHeader>
-          <TableBody>
-            {data.map((budget) => {
-              const { id, name, materials, salesPrice } = budget;
+                const materialsArray = materials.map((material) => {
+                  cost += material.material.unitPrice * material.quantity;
 
-              let cost = 0;
+                  return {
+                    name: material.material.name,
+                    quantity: material.quantity,
+                  };
+                });
 
-              const materialsArray = materials.map((material) => {
-                cost += material.material.unitPrice * material.quantity;
+                const chipColor = STATUS_COLOR[budget.status.id - 1];
 
-                return {
-                  name: material.material.name,
-                  quantity: material.quantity,
-                };
-              });
+                return (
+                  <TableRow key={id}>
+                    <TableCell>{name}</TableCell>
+                    <TableCell>
+                      {materialsArray.map(({ name }) => (
+                        <>
+                          {name}
+                          <br />
+                        </>
+                      ))}
+                    </TableCell>
+                    <TableCell className="text-end">
+                      {materialsArray.map(({ quantity }) => (
+                        <>
+                          {formatInt(quantity)}
+                          <br />
+                        </>
+                      ))}
+                    </TableCell>
+                    <TableCell className="text-end">
+                      {formatCurrency(cost)}
+                    </TableCell>
+                    <TableCell className="text-end">
+                      {formatCurrency(salesPrice)}
+                    </TableCell>
+                    <TableCell className="text-end text-green-500">
+                      {formatCurrency(salesPrice - cost)}
+                    </TableCell>
+                    <TableCell>
+                      <Chip radius="full" variant="flat" color={chipColor}>
+                        {budget.status.name}
+                      </Chip>
+                    </TableCell>
 
-              const chipColor = STATUS_COLOR[budget.status.id - 1];
+                    <TableCell>
+                      <Button
+                        color="secondary"
+                        size="sm"
+                        onClick={() => handleShowDetail(id)}
+                      >
+                        Ver detalle
+                      </Button>
+                    </TableCell>
 
-              return (
-                <TableRow key={id}>
-                  <TableCell>{name}</TableCell>
-                  <TableCell>
-                    {materialsArray.map(({ name }) => (
-                      <>
-                        {name}
-                        <br />
-                      </>
-                    ))}
-                  </TableCell>
-                  <TableCell className="text-end">
-                    {materialsArray.map(({ quantity }) => (
-                      <>
-                        {formatInt(quantity)}
-                        <br />
-                      </>
-                    ))}
-                  </TableCell>
-                  <TableCell className="text-end">
-                    {formatCurrency(cost)}
-                  </TableCell>
-                  <TableCell className="text-end">
-                    {formatCurrency(salesPrice)}
-                  </TableCell>
-                  <TableCell className="text-end text-green-500">
-                    {formatCurrency(salesPrice - cost)}
-                  </TableCell>
-                  <TableCell>
-                    <Chip radius="full" variant="flat" color={chipColor}>
-                      {budget.status.name}
-                    </Chip>
-                  </TableCell>
+                    <TableCell>
+                      <Link to={`edit/${id}`}>
+                        <Button
+                          isIconOnly
+                          color="success"
+                          size="sm"
+                          className="mr-2"
+                        >
+                          <PencilIcon className={"h-4 w-4 text-white"} />
+                        </Button>
+                      </Link>
 
-                  <TableCell>
-                    <Button
-                      color="secondary"
-                      size="sm"
-                      onClick={() => handleShowDetail(id)}
-                    >
-                      Ver detalle
-                    </Button>
-                  </TableCell>
-
-                  <TableCell>
-                    <Link to={`edit/${id}`}>
                       <Button
                         isIconOnly
-                        color="success"
+                        color="danger"
                         size="sm"
-                        className="mr-2"
+                        onClick={() => handleOpenModal(id)}
                       >
-                        <PencilIcon className={"h-4 w-4 text-white"} />
+                        <TrashIcon className={"h-4 w-4"} />
                       </Button>
-                    </Link>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
 
-                    <Button isIconOnly color="danger" size="sm">
-                      <TrashIcon className={"h-4 w-4"} />
+        <div className={detail ? "show flex-[30%]" : "hide"} id="two">
+          {detail && <BudgetDetail data={detail} />}
+        </div>
+      </div>
+
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                🗑️ Eliminar presupuesto
+              </ModalHeader>
+              <ModalBody>
+                {fetcher.data && <p>{fetcher.data.message}</p>}
+                {toDelete && (
+                  <>
+                    <p>Confirma que deseas eliminar el presupuesto:</p>
+                    <p>
+                      Nombre: <strong>{toDelete?.name}</strong>
+                    </p>
+                  </>
+                )}
+              </ModalBody>
+              <ModalFooter>
+                {fetcher.state === "idle" && fetcher.data === undefined && (
+                  <>
+                    <Button
+                      color="default"
+                      variant="light"
+                      onPress={handleCloseModal}
+                    >
+                      Cancelar
                     </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className={isOpen ? "show flex-[30%]" : "hide"} id="two">
-        {detail && <BudgetDetail data={detail} />}
-      </div>
-    </div>
+                    <Button color="danger" onClick={handleConfirmDelete}>
+                      Eliminar
+                    </Button>
+                  </>
+                )}
+                {fetcher.state !== "idle" && "Cargando..."}
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+    </>
   );
 }
 

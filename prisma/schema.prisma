@@ -65,7 +65,7 @@ model Budget {
 }
 
 model MaterialsOnBudgets {
-  budget     Budget   @relation(fields: [budgetId], references: [id])
+  budget     Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   budgetId   Int
   material   Material @relation(fields: [materialId], references: [id])
   materialId Int

@@ -170,3 +170,32 @@ export function updateBudget({
     updateBudget,
   ]);
 }
+
+export async function deleteBudget(id: number) {
+  const getMaterials = await prisma.materialsOnBudgets.findMany({
+    where: {
+      budgetId: id,
+    },
+  });
+
+  const deleteBudget = prisma.budget.delete({
+    where: {
+      id,
+    },
+  });
+
+  const restoreMaterialsQuantity = getMaterials.map((material) => {
+    return prisma.material.update({
+      where: {
+        id: material.materialId,
+      },
+      data: {
+        stock: {
+          increment: material.quantity,
+        },
+      },
+    });
+  });
+
+  return prisma.$transaction([deleteBudget, ...restoreMaterialsQuantity]);
+}
