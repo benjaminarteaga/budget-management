@@ -1,5 +1,5 @@
 import type { V2_MetaFunction } from "@remix-run/node";
-import { Link } from "@remix-run/react";
+import { Link, useMatches } from "@remix-run/react";
 
 // import { useUser } from "~/utils";
 import logo from "~/resources/logo.png";
@@ -20,6 +20,31 @@ export const meta: V2_MetaFunction = () => [{ title: "Remix Notes" }];
 export default function Layout({ children }: { children: React.ReactNode }) {
   // const user = useUser();
 
+  const matches = useMatches();
+
+  const isActive = (url: string) =>
+    matches.some(({ pathname }) => pathname.includes(url));
+
+  const renderMenuItems = () => {
+    const items = [
+      { name: "Materiales", url: "/materials" },
+      { name: "Presupuestos", url: "/budgets" },
+    ];
+
+    return items.map(({ name, url }) => (
+      <NavbarItem
+        key={name}
+        className={
+          isActive(url)
+            ? " border-b-2 border-amber-500 font-bold text-amber-500"
+            : "hover:text-amber-500"
+        }
+      >
+        <Link to={url}>{name}</Link>
+      </NavbarItem>
+    ));
+  };
+
   return (
     <div className="bg-background text-foreground light">
       <Navbar
@@ -34,16 +59,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </NavbarBrand>
 
         <NavbarContent className="hidden gap-4 sm:flex" justify="center">
-          <NavbarItem>
-            <Link to="/materials" color="foreground">
-              Materiales
-            </Link>
-          </NavbarItem>
-          <NavbarItem>
-            <Link to="/budgets" color="foreground">
-              Presupuestos
-            </Link>
-          </NavbarItem>
+          {renderMenuItems()}
         </NavbarContent>
 
         <NavbarContent as="div" justify="end">
