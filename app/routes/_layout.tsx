@@ -14,11 +14,12 @@ import {
   NavbarContent,
   NavbarItem,
 } from "@nextui-org/react";
+import { useUser } from "~/utils";
 
 export const meta: V2_MetaFunction = () => [{ title: "Remix Notes" }];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  // const user = useUser();
+  const user = useUser();
 
   const matches = useMatches();
 
@@ -74,24 +75,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 size="sm"
                 src="https://i.pravatar.cc/150?img=37"
               />
-              {/* <img src="https://i.pravatar.cc/150?img=37" alt="avatar" /> */}
             </DropdownTrigger>
             <DropdownMenu aria-label="Profile Actions" variant="flat">
               <DropdownItem key="profile" className="h-14 gap-2">
-                <p className="font-semibold">Signed in as</p>
-                <p className="font-semibold">zoey@example.com</p>
+                <p className="font-semibold">Sesión iniciada como</p>
+                <p className="font-semibold">{user.email}</p>
               </DropdownItem>
-              <DropdownItem key="settings">My Settings</DropdownItem>
-              <DropdownItem key="team_settings">Team Settings</DropdownItem>
-              <DropdownItem key="analytics">Analytics</DropdownItem>
-              <DropdownItem key="system">System</DropdownItem>
-              <DropdownItem key="configurations">Configurations</DropdownItem>
-              <DropdownItem key="help_and_feedback">
-                Help & Feedback
-              </DropdownItem>
-              <DropdownItem key="logout" color="danger">
-                Log Out
-              </DropdownItem>
+
+              <DropdownItem key="logout">Cerrar Sesión</DropdownItem>
             </DropdownMenu>
           </Dropdown>
         </NavbarContent>
