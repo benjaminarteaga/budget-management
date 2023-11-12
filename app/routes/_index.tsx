@@ -1,9 +1,11 @@
 import type { LoaderArgs, V2_MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
+
 import { requireUser } from "~/session.server";
-import Layout from "./_layout";
 
 import logo from "~/resources/logo.png";
+
+import Layout from "./_layout";
 
 export const meta: V2_MetaFunction = () => [{ title: "Remix Notes" }];
 

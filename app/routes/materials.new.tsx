@@ -1,9 +1,9 @@
-import { Form } from "@remix-run/react";
-import { json, redirect } from "@remix-run/node";
-import { createMaterial } from "~/models/material.server";
-import { requireUserId } from "~/session.server";
-import type { ActionArgs } from "@remix-run/node";
 import { useMemo, useState } from "react";
+
+import type { ActionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Form } from "@remix-run/react";
+
 import {
   Button,
   Card,
@@ -14,6 +14,9 @@ import {
   Spacer,
   Switch,
 } from "@nextui-org/react";
+
+import { createMaterial } from "~/models/material.server";
+import { requireUserId } from "~/session.server";
 
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);

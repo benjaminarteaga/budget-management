@@ -1,9 +1,3 @@
-import type { ActionArgs, LoaderArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useSubmit } from "@remix-run/react";
-
-import { requireUserId } from "~/session.server";
-
 import {
   type ChangeEvent,
   useState,
@@ -11,7 +5,15 @@ import {
   useCallback,
   useEffect,
 } from "react";
-import { getMaterialListItems } from "~/models/material.server";
+
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Form, useActionData, useSubmit } from "@remix-run/react";
+
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
+
+import { toast } from "sonner";
+
 import {
   type Selection,
   Button,
@@ -31,16 +33,18 @@ import {
   TableRow,
   getKeyValue,
 } from "@nextui-org/react";
-import { createBudget } from "~/models/budget.server";
-import { formatCurrency, formatInt } from "~/utils";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+
 import {
   TrashIcon,
   ArrowSmallRightIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 
-import { toast } from "sonner";
+import { requireUserId } from "~/session.server";
+import { getMaterialListItems } from "~/models/material.server";
+import { createBudget } from "~/models/budget.server";
+
+import { formatCurrency, formatInt } from "~/utils";
 
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);
@@ -81,13 +85,6 @@ export async function action({ request }: ActionArgs) {
       { status: 400 }
     );
   }
-
-  console.log("save input", {
-    name,
-    materials,
-    salesPrice: +salesPrice,
-    userId,
-  });
 
   await createBudget({
     name,

@@ -13,8 +13,11 @@ import { cssBundleHref } from "@remix-run/css-bundle";
 import fontStylesheetUrl from "~/styles/fonts.css";
 import customStylesheetUrl from "~/styles/style.css";
 import tailwindStylesheetUrl from "~/styles/tailwind.css";
+
 import { getUser } from "~/session.server";
+
 import { NextUIProvider } from "@nextui-org/react";
+
 import { Toaster } from "sonner";
 
 export const links: LinksFunction = () => [
@@ -30,7 +33,7 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 export default function App() {
   return (
-    <html lang="en" className="h-full font-nunito">
+    <html lang="es" className="h-full font-nunito">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />

@@ -12,7 +12,9 @@ import {
   TableRow,
   getKeyValue,
 } from "@nextui-org/react";
+
 import type { BudgetWithRelations } from "~/routes/budgets._index";
+
 import { formatCurrency, formatInt } from "~/utils";
 
 export default function BudgetDetail({

@@ -1,5 +1,12 @@
+import { useEffect, useState } from "react";
+
 import type { LoaderArgs } from "@remix-run/node";
-import { PencilIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
+import { Link, useFetcher } from "@remix-run/react";
+
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
+
+import type { Prisma } from "@prisma/client";
+
 import {
   Button,
   Chip,
@@ -17,16 +24,16 @@ import {
   ModalFooter,
   useDisclosure,
 } from "@nextui-org/react";
-import { Link, useFetcher } from "@remix-run/react";
-import { requireUserId } from "~/session.server";
-import { useEffect, useState } from "react";
-import BudgetDetail from "~/components/BudgetDetail";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
-import { getBudgetListItems, type getBudgetItem } from "~/models/budget.server";
-import type { Prisma } from "@prisma/client";
-import { formatCurrency, formatInt } from "~/utils";
+import { PencilIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
 import { TrashIcon } from "@heroicons/react/24/outline";
+
+import { requireUserId } from "~/session.server";
+import { getBudgetListItems, type getBudgetItem } from "~/models/budget.server";
+
+import BudgetDetail from "~/components/BudgetDetail";
+
+import { formatCurrency, formatInt } from "~/utils";
 
 export type BudgetWithRelations = Prisma.PromiseReturnType<
   typeof getBudgetItem
@@ -208,7 +215,7 @@ export default function BudgetIndexPage() {
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
         <ModalContent>
-          {(onClose) => (
+          {() => (
             <>
               <ModalHeader className="flex flex-col gap-1">
                 🗑️ Eliminar presupuesto

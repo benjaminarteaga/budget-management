@@ -1,9 +1,7 @@
-import type { LoaderArgs } from "@remix-run/server-runtime";
-import { Link, useLoaderData } from "@remix-run/react";
-import { PlusCircleIcon } from "@heroicons/react/24/solid";
-import { requireUserId } from "~/session.server";
-import { getMaterialListItems } from "~/models/material.server";
+import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
+
 import {
   Button,
   Spacer,
@@ -14,12 +12,17 @@ import {
   TableHeader,
   TableRow,
 } from "@nextui-org/react";
+
+import { PlusCircleIcon } from "@heroicons/react/24/solid";
+
+import { requireUserId } from "~/session.server";
+import { getMaterialListItems } from "~/models/material.server";
+
 import { formatCurrency, formatInt } from "~/utils";
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await requireUserId(request);
   const materialListItems = await getMaterialListItems({ userId });
-  console.log({ materialListItems });
 
   return json({ materialListItems });
 };

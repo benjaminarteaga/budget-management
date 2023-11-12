@@ -2,9 +2,6 @@ import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
-import { requireUserId } from "~/session.server";
-
-import { getBudgetItem } from "~/models/budget.server";
 import {
   Card,
   CardBody,
@@ -19,6 +16,10 @@ import {
   TableRow,
   getKeyValue,
 } from "@nextui-org/react";
+
+import { requireUserId } from "~/session.server";
+import { getBudgetItem } from "~/models/budget.server";
+
 import { formatCurrency, formatInt } from "~/utils";
 
 export const loader = async ({ request, params }: LoaderArgs) => {
@@ -26,7 +27,6 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   const userId = await requireUserId(request);
   const budgetItem = await getBudgetItem({ userId, id });
 
-  // console.log({ budgetItem });
   return json(budgetItem);
 };
 
@@ -93,20 +93,6 @@ export default function NewBudgetPage() {
             th: "text-center",
           }}
           bottomContent={
-            // <TableRow key="total">
-            //   <TableCell>
-            //     <span className="font-bold">TOTAL</span>
-            //   </TableCell>
-            //   <TableCell>{}</TableCell>
-            //   <TableCell>{}</TableCell>
-            //   <TableCell className="text-end">
-            //     {data?.materials.reduce(
-            //       (sum, material) =>
-            //         sum + +material.quantity * material.material.unitPrice,
-            //       0
-            //     )}
-            //   </TableCell>
-            // </TableRow>
             <>
               <Divider />
 
