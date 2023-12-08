@@ -109,7 +109,7 @@
     "node": ">=14"
   },
   "prisma": {
-    "seed": "ts-node --transpile-only prisma/seed.ts"
+    "seed": "ts-node --require tsconfig-paths/register --transpile-only prisma/seed.ts"
   },
   "packageManager": "yarn@3.6.2"
 }
