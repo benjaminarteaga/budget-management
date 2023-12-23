@@ -41,7 +41,7 @@ export default function App() {
         <Links />
       </head>
       <body className="h-full">
-        <NextUIProvider>
+        <NextUIProvider className="h-full">
           <Toaster position="bottom-right" richColors />
           <Outlet />
           <ScrollRestoration />

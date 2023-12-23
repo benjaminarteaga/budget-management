@@ -1,11 +1,17 @@
+import { useEffect, useRef, useState } from "react";
+
 import type { ActionArgs, LoaderArgs, V2_MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
-import { useEffect, useRef } from "react";
+import { Form, useActionData, useSearchParams } from "@remix-run/react";
+
+import { Button, Input } from "@nextui-org/react";
+
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 
 import { verifyLogin } from "~/models/user.server";
 import { createUserSession, getUserId } from "~/session.server";
 import { safeRedirect, validateEmail } from "~/utils";
+import logo from "~/resources/logo.png";
 
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await getUserId(request);
@@ -22,21 +28,21 @@ export const action = async ({ request }: ActionArgs) => {
 
   if (!validateEmail(email)) {
     return json(
-      { errors: { email: "Email is invalid", password: null } },
+      { errors: { email: "Email es inválido", password: null } },
       { status: 400 }
     );
   }
 
   if (typeof password !== "string" || password.length === 0) {
     return json(
-      { errors: { email: null, password: "Password is required" } },
+      { errors: { email: null, password: "Contraseña es requerida" } },
       { status: 400 }
     );
   }
 
   if (password.length < 8) {
     return json(
-      { errors: { email: null, password: "Password is too short" } },
+      { errors: { email: null, password: "Contraseña es muy corta" } },
       { status: 400 }
     );
   }
@@ -45,14 +51,14 @@ export const action = async ({ request }: ActionArgs) => {
 
   if (!user) {
     return json(
-      { errors: { email: "Invalid email or password", password: null } },
+      { errors: { email: "Email o contraseña son inválidos", password: null } },
       { status: 400 }
     );
   }
 
   return createUserSession({
     redirectTo,
-    remember: remember === "on" ? true : false,
+    remember: remember === "on",
     request,
     userId: user.id,
   });
@@ -67,6 +73,10 @@ export default function LoginPage() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
+  const [isVisible, setIsVisible] = useState(false);
+
+  const toggleVisibility = () => setIsVisible(!isVisible);
+
   useEffect(() => {
     if (actionData?.errors?.email) {
       emailRef.current?.focus();
@@ -78,96 +88,74 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-full flex-col justify-center">
       <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6">
+        <img
+          src={logo}
+          alt="Camilili Design"
+          className="mb-8 max-w-full object-contain"
+        />
+
+        <Form className="space-y-8" method="post">
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email address
-            </label>
-            <div className="mt-1">
-              <input
-                ref={emailRef}
-                id="email"
-                required
-                autoFocus={true}
-                name="email"
-                type="email"
-                autoComplete="email"
-                aria-invalid={actionData?.errors?.email ? true : undefined}
-                aria-describedby="email-error"
-                className="w-full rounded border border-gray-500 px-2 py-1 text-lg"
-              />
-              {actionData?.errors?.email && (
-                <div className="pt-1 text-red-700" id="email-error">
-                  {actionData.errors.email}
-                </div>
-              )}
-            </div>
+            <Input
+              ref={emailRef}
+              autoFocus={true}
+              name="email"
+              type="email"
+              autoComplete="email"
+              label="Email"
+              labelPlacement="outside"
+              size="lg"
+              variant="bordered"
+              required
+            />
+            {actionData?.errors?.email && (
+              <div className="pt-1 text-red-700" id="email-error">
+                {actionData.errors.email}
+              </div>
+            )}
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <div className="mt-1">
-              <input
-                id="password"
-                ref={passwordRef}
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                aria-invalid={actionData?.errors?.password ? true : undefined}
-                aria-describedby="password-error"
-                className="w-full rounded border border-gray-500 px-2 py-1 text-lg"
-              />
-              {actionData?.errors?.password && (
-                <div className="pt-1 text-red-700" id="password-error">
-                  {actionData.errors.password}
-                </div>
-              )}
-            </div>
+            <Input
+              ref={passwordRef}
+              type={isVisible ? "text" : "password"}
+              name="password"
+              label="Contraseña"
+              labelPlacement="outside"
+              size="lg"
+              variant="bordered"
+              endContent={
+                <button
+                  className="focus:outline-none"
+                  type="button"
+                  onClick={toggleVisibility}
+                >
+                  {isVisible ? (
+                    <EyeSlashIcon className="pointer-events-none h-6 w-6 text-2xl text-default-400" />
+                  ) : (
+                    <EyeIcon className="pointer-events-none h-6 w-6 text-2xl text-default-400" />
+                  )}
+                </button>
+              }
+            />
+            {actionData?.errors?.password && (
+              <div className="pt-1 text-red-700" id="password-error">
+                {actionData.errors.password}
+              </div>
+            )}
           </div>
 
           <input type="hidden" name="redirectTo" value={redirectTo} />
-          <button
+
+          <Button
             type="submit"
-            className="w-full rounded bg-blue-500  px-4 py-2 text-white hover:bg-blue-600 focus:bg-blue-400"
+            variant="shadow"
+            color="primary"
+            size="lg"
+            fullWidth
           >
-            Log in
-          </button>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember"
-                name="remember"
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label
-                htmlFor="remember"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                Remember me
-              </label>
-            </div>
-            <div className="text-center text-sm text-gray-500">
-              Don't have an account?{" "}
-              <Link
-                className="text-blue-500 underline"
-                to={{
-                  pathname: "/join",
-                  search: searchParams.toString(),
-                }}
-              >
-                Sign up
-              </Link>
-            </div>
-          </div>
+            Iniciar Sesión
+          </Button>
         </Form>
       </div>
     </div>

@@ -82,7 +82,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <p className="font-semibold">{user.email}</p>
               </DropdownItem>
 
-              <DropdownItem key="logout">Cerrar Sesión</DropdownItem>
+              <DropdownItem key="logout">
+                <form method="POST" action="/logout">
+                  <button>Cerrar Sesión</button>
+                </form>
+              </DropdownItem>
             </DropdownMenu>
           </Dropdown>
         </NavbarContent>
