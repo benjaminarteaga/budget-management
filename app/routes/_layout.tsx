@@ -30,6 +30,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const items = [
       { name: "Materiales", url: "/materials" },
       { name: "Presupuestos", url: "/budgets" },
+      { name: "Usuarios", url: "/users" },
     ];
 
     return items.map(({ name, url }) => (

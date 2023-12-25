@@ -12,6 +12,9 @@ export function getBudgetListItems({ userId }: { userId: User["id"] }) {
       },
       status: true,
     },
+    where: {
+      userId: +userId,
+    },
   });
 }
 
