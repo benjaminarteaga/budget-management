@@ -116,7 +116,7 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   return typedjson({ budget, materialListItems });
 };
 
-export default function NewBudgetPage() {
+export default function EditBudgetPage() {
   const data = useTypedLoaderData<typeof loader>();
 
   const mapItems = data?.budget?.materials.map((material) => {
