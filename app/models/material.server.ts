@@ -5,6 +5,7 @@ import { prisma } from "~/db.server";
 export function getMaterialListItems({ userId }: { userId: User["id"] }) {
   return prisma.material.findMany({
     where: { userId },
+    orderBy: { id: "desc" },
   });
 }
 
