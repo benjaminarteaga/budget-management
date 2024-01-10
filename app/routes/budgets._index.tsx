@@ -23,13 +23,21 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
 } from "@nextui-org/react";
 
 import { PencilIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
 import { TrashIcon } from "@heroicons/react/24/outline";
 
 import { requireUserId } from "~/session.server";
-import { getBudgetListItems, type getBudgetItem } from "~/models/budget.server";
+import {
+  getBudgetListItems,
+  type getBudgetItem,
+  getBudgetStatusList,
+} from "~/models/budget.server";
 
 import BudgetDetail from "~/components/BudgetDetail";
 
@@ -39,15 +47,22 @@ export type BudgetWithRelations = Prisma.PromiseReturnType<
   typeof getBudgetItem
 >;
 
+type ChangeStatusParams = {
+  budgetId: number;
+  statusId: number;
+};
+
 export const loader = async ({ request }: LoaderArgs) => {
   const userId = await requireUserId(request);
   const budgetListItems = await getBudgetListItems({ userId });
+  const budgetStatusList = await getBudgetStatusList();
 
-  return typedjson(budgetListItems);
+  return typedjson({ budgetListItems, budgetStatusList });
 };
 
 export default function BudgetIndexPage() {
-  const data = useTypedLoaderData<typeof loader>();
+  const { budgetListItems, budgetStatusList } =
+    useTypedLoaderData<typeof loader>();
 
   const [detail, setDetail] = useState<BudgetWithRelations>();
 
@@ -68,11 +83,11 @@ export default function BudgetIndexPage() {
       return;
     }
 
-    setDetail(data.find((budget) => budget.id === id));
+    setDetail(budgetListItems.find((budget) => budget.id === id));
   };
 
   const handleOpenModal = (id: number) => {
-    setToDelete(data.find((budget) => budget.id === id));
+    setToDelete(budgetListItems.find((budget) => budget.id === id));
     onOpen();
   };
 
@@ -84,6 +99,17 @@ export default function BudgetIndexPage() {
   const handleConfirmDelete = () => {
     toDelete &&
       fetcher.submit({}, { method: "post", action: `delete/${toDelete?.id}` });
+  };
+
+  const handleChangeStatus = ({ budgetId, statusId }: ChangeStatusParams) => {
+    fetcher.submit(
+      { statusId: statusId },
+      {
+        method: "post",
+        action: `status/${budgetId}`,
+        encType: "application/json",
+      }
+    );
   };
 
   return (
@@ -120,7 +146,7 @@ export default function BudgetIndexPage() {
               <TableColumn>ACCIONES</TableColumn>
             </TableHeader>
             <TableBody>
-              {data.map((budget) => {
+              {budgetListItems.map((budget) => {
                 const { id, name, materials, salesPrice } = budget;
 
                 let cost = 0;
@@ -165,9 +191,46 @@ export default function BudgetIndexPage() {
                       {formatCurrency(salesPrice - cost)}
                     </TableCell>
                     <TableCell>
-                      <Chip radius="full" variant="flat" color={chipColor}>
-                        {budget.status.name}
-                      </Chip>
+                      <Dropdown>
+                        <DropdownTrigger>
+                          <Chip
+                            radius="full"
+                            variant="flat"
+                            color={chipColor}
+                            className="outline-none transition-transform"
+                            as="button"
+                          >
+                            {budget.status.name}
+                          </Chip>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                          aria-label="Profile Actions"
+                          variant="flat"
+                        >
+                          {budgetStatusList.map((status) => (
+                            <DropdownItem
+                              key={status.id}
+                              className="group outline-none data-[hover=true]:bg-transparent"
+                            >
+                              <Chip
+                                radius="full"
+                                variant="flat"
+                                color={STATUS_COLOR[status.id - 1]}
+                                className="outline-none transition-all group-hover:px-6"
+                                as="button"
+                                onClick={() =>
+                                  handleChangeStatus({
+                                    budgetId: id,
+                                    statusId: status.id,
+                                  })
+                                }
+                              >
+                                {status.name}
+                              </Chip>
+                            </DropdownItem>
+                          ))}
+                        </DropdownMenu>
+                      </Dropdown>
                     </TableCell>
 
                     <TableCell>

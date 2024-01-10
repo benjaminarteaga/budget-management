@@ -15,6 +15,9 @@ export function getBudgetListItems({ userId }: { userId: User["id"] }) {
     where: {
       userId: +userId,
     },
+    orderBy: {
+      id: "desc",
+    },
   });
 }
 
@@ -201,4 +204,19 @@ export async function deleteBudget(id: number) {
   });
 
   return prisma.$transaction([deleteBudget, ...restoreMaterialsQuantity]);
+}
+
+export function getBudgetStatusList() {
+  return prisma.budgetStatus.findMany();
+}
+
+export async function updateStatusBudget(id: number, statusId: number) {
+  return prisma.budget.update({
+    where: {
+      id,
+    },
+    data: {
+      statusId,
+    },
+  });
 }
