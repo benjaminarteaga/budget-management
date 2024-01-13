@@ -1,9 +1,13 @@
 import type { LoaderArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 
 import {
   Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Spacer,
   Table,
   TableBody,
@@ -11,28 +15,62 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  useDisclosure,
 } from "@nextui-org/react";
 
-import { PlusCircleIcon } from "@heroicons/react/24/solid";
+import {
+  PencilIcon,
+  PlusCircleIcon,
+  TrashIcon,
+} from "@heroicons/react/24/solid";
 
 import { requireUserId } from "~/session.server";
 
-import { getUserListItems } from "~/models/user.server";
+import { type getUserById, getUserListItems } from "~/models/user.server";
+import { useEffect, useState } from "react";
+import type { Prisma } from "@prisma/client";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUserId(request);
   const userListItems = await getUserListItems();
 
-  return json({ userListItems });
+  return typedjson({ userListItems });
 };
 
-export default function UsersIndexPage() {
-  const data = useLoaderData<typeof loader>();
+export type User = Prisma.PromiseReturnType<typeof getUserById>;
 
-  console.log({ data });
+export default function UsersIndexPage() {
+  const { userListItems } = useTypedLoaderData<typeof loader>();
+
+  const [toDelete, setToDelete] = useState<User>();
+
+  const fetcher = useFetcher();
+
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+
+  useEffect(() => {
+    setToDelete(null);
+    setTimeout(() => onClose(), 2000);
+  }, [fetcher.data, onClose]);
+
+  const handleOpenModal = (id: number) => {
+    setToDelete(userListItems.find((user) => user.id === id));
+    onOpen();
+  };
+
+  const handleCloseModal = () => {
+    setToDelete(null);
+    onClose();
+  };
+
+  const handleConfirmDelete = () => {
+    toDelete &&
+      fetcher.submit({}, { method: "post", action: `delete/${toDelete?.id}` });
+  };
 
   return (
-    <>
+    <div className="mx-auto max-w-screen-md">
       <Link to="new">
         <Button
           color="success"
@@ -51,9 +89,10 @@ export default function UsersIndexPage() {
         <TableHeader>
           <TableColumn>EMAIL</TableColumn>
           <TableColumn>FECHA DE CREACION</TableColumn>
+          <TableColumn>ACCIONES</TableColumn>
         </TableHeader>
         <TableBody>
-          {data.userListItems.map((user) => (
+          {userListItems.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.email}</TableCell>
               <TableCell>
@@ -61,10 +100,66 @@ export default function UsersIndexPage() {
                   new Date(user.createdAt)
                 )}
               </TableCell>
+              <TableCell>
+                <Link to={`edit/${user.id}`}>
+                  <Button isIconOnly color="success" size="sm" className="mr-2">
+                    <PencilIcon className={"h-4 w-4 text-white"} />
+                  </Button>
+                </Link>
+
+                <Button
+                  isIconOnly
+                  color="danger"
+                  size="sm"
+                  onClick={() => handleOpenModal(user.id)}
+                >
+                  <TrashIcon className={"h-4 w-4"} />
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-    </>
+
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
+        <ModalContent>
+          {() => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                🗑️ Eliminar usuario
+              </ModalHeader>
+              <ModalBody>
+                {fetcher.data && <p>{fetcher.data.message}</p>}
+                {toDelete && (
+                  <>
+                    <p>Confirma que deseas eliminar el presupuesto:</p>
+                    <p>
+                      Email: <strong>{toDelete?.email}</strong>
+                    </p>
+                  </>
+                )}
+              </ModalBody>
+              <ModalFooter>
+                {fetcher.state === "idle" && fetcher.data === undefined && (
+                  <>
+                    <Button
+                      color="default"
+                      variant="light"
+                      onPress={handleCloseModal}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button color="danger" onClick={handleConfirmDelete}>
+                      Eliminar
+                    </Button>
+                  </>
+                )}
+                {fetcher.state !== "idle" && "Cargando..."}
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+    </div>
   );
 }
