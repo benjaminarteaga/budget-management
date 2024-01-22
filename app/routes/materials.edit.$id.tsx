@@ -22,7 +22,15 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);
 
-  const { id, name, quantity, stock, price, unitPrice } = await request.json();
+  const formData = await request.formData();
+  const id = +(formData.get("id") as string);
+  const name = formData.get("name");
+  const quantity = +(formData.get("quantity") as string);
+  const stock = formData.get("stock")
+    ? +(formData.get("stock") as string)
+    : quantity;
+  const price = +(formData.get("price") as string);
+  const unitPrice = +(formData.get("unitPrice") as string);
 
   if (typeof name !== "string" || name.length === 0) {
     return json(
@@ -88,8 +96,6 @@ export const loader = async ({ request, params }: LoaderArgs) => {
 export default function EditMaterialPage() {
   const data = useTypedLoaderData<typeof loader>();
 
-  // const error = useActionData<typeof action>();
-
   const [quantity, setStock] = useState(data?.quantity || 0);
   const [price, setPrice] = useState(data?.price || 0);
   const [isSelected, setIsSelected] = useState(false);
@@ -125,7 +131,7 @@ export default function EditMaterialPage() {
             label="Cantidad disponible"
             name="quantity"
             onChange={(e) => setStock(parseInt(e.target.value))}
-            value={data?.stock?.toString()}
+            value={quantity.toString()}
           />
 
           <Spacer y={4} />
@@ -173,6 +179,8 @@ export default function EditMaterialPage() {
           />
 
           <Spacer y={4} />
+
+          <input type="hidden" name="id" value={data?.id.toString()} />
 
           <Button
             type="submit"

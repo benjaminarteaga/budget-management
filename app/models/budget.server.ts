@@ -136,7 +136,11 @@ export function updateBudget({
     },
   }));
 
-  const decrementMaterials = materials.map((m) => {
+  const filteredOldMaterials = materials.filter((m) =>
+    oldMaterials.some((oldMaterial) => m.id === oldMaterial.id)
+  );
+
+  const decrementMaterials = filteredOldMaterials.map((m) => {
     const old = oldMaterials.find((oldMaterial) => m.id === oldMaterial.id);
     const quantityCalculated = Number(m.quantity) - Number(old?.quantity);
 
