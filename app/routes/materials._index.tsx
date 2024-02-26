@@ -156,7 +156,7 @@ export default function MaterialIndexPage() {
                 )}
               </ModalBody>
               <ModalFooter>
-                {fetcher.state === "idle" && fetcher.data === undefined && (
+                {fetcher.state === "idle" && toDelete && (
                   <>
                     <Button
                       color="default"
