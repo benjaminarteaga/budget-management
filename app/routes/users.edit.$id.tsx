@@ -14,18 +14,25 @@ import {
   Spacer,
 } from "@nextui-org/react";
 
-import { requireUser } from "~/session.server";
+import { requireUserId } from "~/session.server";
 import { safeRedirect, validateEmail } from "~/utils";
-import { createUser, getUserByEmail } from "~/models/user.server";
+import { getUserByEmail, getUserById, updateUser } from "~/models/user.server";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
-export const loader = async ({ request }: LoaderArgs) => {
-  const user = await requireUser(request);
-  return json(user);
+export const loader = async ({ request, params }: LoaderArgs) => {
+  await requireUserId(request);
+
+  const { id } = params;
+
+  const user = await getUserById(Number(id));
+
+  return typedjson({ user });
 };
 
 export const action = async ({ request }: ActionArgs) => {
   const formData = await request.formData();
+  const id = Number(formData.get("id"));
   const email = formData.get("email");
   const password = formData.get("password");
   const redirectTo = safeRedirect("/users");
@@ -52,7 +59,7 @@ export const action = async ({ request }: ActionArgs) => {
   }
 
   const existingUser = await getUserByEmail(email);
-  if (existingUser) {
+  if (existingUser && existingUser.id !== id) {
     return json(
       {
         errors: {
@@ -64,12 +71,14 @@ export const action = async ({ request }: ActionArgs) => {
     );
   }
 
-  await createUser(email, password);
+  await updateUser({ id, email, password });
 
   return redirect(redirectTo);
 };
 
-export default function NewUserPage() {
+export default function EditUserPage() {
+  const { user } = useTypedLoaderData<typeof loader>();
+
   const actionData = useActionData<typeof action>();
 
   const emailRef = useRef<HTMLInputElement>(null);
@@ -91,13 +100,19 @@ export default function NewUserPage() {
     <Card className="mx-auto max-w-[400px]">
       <CardHeader className="flex gap-3">
         <h1 className="font-medium">
-          <span className="text-3xl">👩‍💻👨‍💻</span> Nuevo usuario
+          <span className="text-3xl">👩‍💻👨‍💻</span> Editar usuario
         </h1>
       </CardHeader>
       <Divider />
       <CardBody>
         <Form method="post">
-          <Input ref={emailRef} name="email" type="email" label="Email" />
+          <Input
+            ref={emailRef}
+            name="email"
+            type="email"
+            label="Email"
+            defaultValue={user?.email}
+          />
           {actionData?.errors?.email && (
             <div className="pt-1 text-red-700" id="email-error">
               {actionData.errors.email}
@@ -132,6 +147,8 @@ export default function NewUserPage() {
           )}
 
           <Spacer y={4} />
+
+          <input type="hidden" name="id" value={user?.id} />
 
           <Button
             type="submit"
