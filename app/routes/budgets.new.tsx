@@ -132,33 +132,6 @@ export default function NewBudgetPage() {
 
   /**
    * @description
-   * Table header of selected materials.
-   */
-  const columns = [
-    {
-      key: "material",
-      label: "MATERIAL",
-    },
-    {
-      key: "quantity",
-      label: "CANTIDAD",
-    },
-    {
-      key: "unitPrice",
-      label: "PRECIO UNITARIO",
-    },
-    {
-      key: "subtotal",
-      label: "SUBTOTAL",
-    },
-    {
-      key: "actions",
-      label: "",
-    },
-  ];
-
-  /**
-   * @description
    * Table content of selected materials.
    */
   const rows = useMemo(
@@ -303,9 +276,13 @@ export default function NewBudgetPage() {
     });
   };
 
-  const total = materials.reduce(
-    (sum, material) => sum + +material.quantity * material.unitPrice,
-    0
+  const total = useMemo(
+    () =>
+      materials.reduce(
+        (sum, material) => sum + +material.quantity * material.unitPrice,
+        0
+      ),
+    [materials]
   );
 
   return (
@@ -497,3 +474,30 @@ type MaterialList = {
   unitPrice: number;
   quantity: string;
 };
+
+/**
+ * @description
+ * Table header of selected materials.
+ */
+const columns = [
+  {
+    key: "material",
+    label: "MATERIAL",
+  },
+  {
+    key: "quantity",
+    label: "CANTIDAD",
+  },
+  {
+    key: "unitPrice",
+    label: "PRECIO UNITARIO",
+  },
+  {
+    key: "subtotal",
+    label: "SUBTOTAL",
+  },
+  {
+    key: "actions",
+    label: "",
+  },
+];

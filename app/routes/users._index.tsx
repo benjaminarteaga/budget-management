@@ -1,5 +1,11 @@
+import { useEffect, useState } from "react";
+
 import type { LoaderArgs } from "@remix-run/node";
 import { Link, useFetcher } from "@remix-run/react";
+
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
+
+import type { Prisma } from "@prisma/client";
 
 import {
   Button,
@@ -27,9 +33,6 @@ import {
 import { requireUserId } from "~/session.server";
 
 import { type getUserById, getUserListItems } from "~/models/user.server";
-import { useEffect, useState } from "react";
-import type { Prisma } from "@prisma/client";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 export const loader = async ({ request }: LoaderArgs) => {
   await requireUserId(request);
@@ -92,16 +95,14 @@ export default function UsersIndexPage() {
           <TableColumn>ACCIONES</TableColumn>
         </TableHeader>
         <TableBody>
-          {userListItems.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.email}</TableCell>
+          {userListItems.map(({ id, email, createdAt }) => (
+            <TableRow key={id}>
+              <TableCell>{email}</TableCell>
               <TableCell>
-                {new Intl.DateTimeFormat("es-CL").format(
-                  new Date(user.createdAt)
-                )}
+                {new Intl.DateTimeFormat("es-CL").format(new Date(createdAt))}
               </TableCell>
               <TableCell>
-                <Link to={`edit/${user.id}`}>
+                <Link to={`edit/${id}`}>
                   <Button isIconOnly color="success" size="sm" className="mr-2">
                     <PencilIcon className={"h-4 w-4 text-white"} />
                   </Button>
@@ -111,7 +112,7 @@ export default function UsersIndexPage() {
                   isIconOnly
                   color="danger"
                   size="sm"
-                  onClick={() => handleOpenModal(user.id)}
+                  onClick={() => handleOpenModal(id)}
                 >
                   <TrashIcon className={"h-4 w-4"} />
                 </Button>

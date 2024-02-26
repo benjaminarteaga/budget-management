@@ -19,6 +19,19 @@ import { getMaterialItem, updateMaterial } from "~/models/material.server";
 import { requireUserId } from "~/session.server";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
+export const loader = async ({ request, params }: LoaderArgs) => {
+  const userId = await requireUserId(request);
+
+  const { id } = params;
+
+  const material = await getMaterialItem({
+    userId,
+    id,
+  });
+
+  return typedjson({ material });
+};
+
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);
 
@@ -80,24 +93,13 @@ export async function action({ request }: ActionArgs) {
   return redirect("/materials");
 }
 
-export const loader = async ({ request, params }: LoaderArgs) => {
-  const userId = await requireUserId(request);
-
-  const { id } = params;
-
-  const material = await getMaterialItem({
-    userId,
-    id,
-  });
-
-  return typedjson(material);
-};
-
 export default function EditMaterialPage() {
-  const data = useTypedLoaderData<typeof loader>();
+  const { material } = useTypedLoaderData<typeof loader>();
 
-  const [quantity, setStock] = useState(data?.quantity || 0);
-  const [price, setPrice] = useState(data?.price || 0);
+  const [quantity, setStock] = useState(material?.quantity || 0);
+
+  const [price, setPrice] = useState(material?.price || 0);
+
   const [isSelected, setIsSelected] = useState(false);
 
   const unitPrice = useMemo(() => {
@@ -121,7 +123,7 @@ export default function EditMaterialPage() {
             type="text"
             label="Nombre"
             name="name"
-            defaultValue={data?.name}
+            defaultValue={material?.name}
           />
 
           <Spacer y={4} />
@@ -180,7 +182,7 @@ export default function EditMaterialPage() {
 
           <Spacer y={4} />
 
-          <input type="hidden" name="id" value={data?.id.toString()} />
+          <input type="hidden" name="id" value={material?.id.toString()} />
 
           <Button
             type="submit"

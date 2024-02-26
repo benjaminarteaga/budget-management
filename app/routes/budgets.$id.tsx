@@ -18,6 +18,7 @@ import {
 } from "@nextui-org/react";
 
 import { requireUserId } from "~/session.server";
+
 import { getBudgetItem } from "~/models/budget.server";
 
 import { formatCurrency, formatInt } from "~/utils";
@@ -27,11 +28,11 @@ export const loader = async ({ request, params }: LoaderArgs) => {
   const userId = await requireUserId(request);
   const budgetItem = await getBudgetItem({ userId, id });
 
-  return json(budgetItem);
+  return json({ budgetItem });
 };
 
 export default function NewBudgetPage() {
-  const data = useLoaderData<typeof loader>();
+  const { budgetItem } = useLoaderData<typeof loader>();
 
   const columns = [
     {
@@ -52,7 +53,7 @@ export default function NewBudgetPage() {
     },
   ];
 
-  const rows = data?.materials?.map((m, index) => {
+  const rows = budgetItem?.materials?.map((m, index) => {
     return {
       key: index,
       material: m.material.name,
@@ -62,7 +63,7 @@ export default function NewBudgetPage() {
     };
   });
 
-  const total = data?.materials.reduce(
+  const total = budgetItem?.materials.reduce(
     (sum, material) => sum + +material.quantity * material.material.unitPrice,
     0
   );
@@ -78,7 +79,7 @@ export default function NewBudgetPage() {
       <Divider />
 
       <CardBody>
-        <h2 className="text-lg font-semibold">{data?.name}</h2>
+        <h2 className="text-lg font-semibold">{budgetItem?.name}</h2>
 
         <Spacer y={4} />
 

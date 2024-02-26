@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import type { LoaderArgs } from "@remix-run/node";
 import { Link, useFetcher } from "@remix-run/react";
 
-import type { Prisma } from "@prisma/client";
-
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
+
+import type { Prisma } from "@prisma/client";
 
 import {
   Button,
@@ -43,11 +44,11 @@ export const loader = async ({ request }: LoaderArgs) => {
   const userId = await requireUserId(request);
   const materialListItems = await getMaterialListItems({ userId });
 
-  return typedjson(materialListItems);
+  return typedjson({ materialListItems });
 };
 
 export default function MaterialIndexPage() {
-  const data = useTypedLoaderData<typeof loader>();
+  const { materialListItems } = useTypedLoaderData<typeof loader>();
 
   const [toDelete, setToDelete] = useState<Materials>();
 
@@ -55,8 +56,13 @@ export default function MaterialIndexPage() {
 
   const fetcher = useFetcher();
 
+  useEffect(() => {
+    setToDelete(null);
+    setTimeout(() => onClose(), 2000);
+  }, [fetcher.data, onClose]);
+
   const handleOpenModal = (id: number) => {
-    setToDelete(data.find((material) => material.id === id));
+    setToDelete(materialListItems.find((material) => material.id === id));
     onOpen();
   };
 
@@ -96,31 +102,38 @@ export default function MaterialIndexPage() {
           <TableColumn>ACCIONES</TableColumn>
         </TableHeader>
         <TableBody>
-          {data.map((material) => (
-            <TableRow key={material.id}>
-              <TableCell>{material.name}</TableCell>
-              <TableCell>{formatInt(material.stock)}</TableCell>
-              <TableCell>{formatInt(material.quantity)}</TableCell>
-              <TableCell>{formatCurrency(material.price)}</TableCell>
-              <TableCell>{formatCurrency(material.unitPrice)}</TableCell>
-              <TableCell>
-                <Link to={`edit/${material.id}`}>
-                  <Button isIconOnly color="success" size="sm" className="mr-2">
-                    <PencilIcon className={"h-4 w-4 text-white"} />
-                  </Button>
-                </Link>
+          {materialListItems.map(
+            ({ id, name, stock, quantity, price, unitPrice }) => (
+              <TableRow key={id}>
+                <TableCell>{name}</TableCell>
+                <TableCell>{formatInt(stock)}</TableCell>
+                <TableCell>{formatInt(quantity)}</TableCell>
+                <TableCell>{formatCurrency(price)}</TableCell>
+                <TableCell>{formatCurrency(unitPrice)}</TableCell>
+                <TableCell>
+                  <Link to={`edit/${id}`}>
+                    <Button
+                      isIconOnly
+                      color="success"
+                      size="sm"
+                      className="mr-2"
+                    >
+                      <PencilIcon className={"h-4 w-4 text-white"} />
+                    </Button>
+                  </Link>
 
-                <Button
-                  isIconOnly
-                  color="danger"
-                  size="sm"
-                  onClick={() => handleOpenModal(material.id)}
-                >
-                  <TrashIcon className={"h-4 w-4"} />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+                  <Button
+                    isIconOnly
+                    color="danger"
+                    size="sm"
+                    onClick={() => handleOpenModal(id)}
+                  >
+                    <TrashIcon className={"h-4 w-4"} />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            )
+          )}
         </TableBody>
       </Table>
 

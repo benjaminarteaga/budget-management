@@ -46,6 +46,20 @@ import { getBudgetItem, updateBudget } from "~/models/budget.server";
 
 import { formatCurrency, formatInt } from "~/utils";
 
+export const loader = async ({ request, params }: LoaderArgs) => {
+  const userId = await requireUserId(request);
+  const materialListItems = await getMaterialListItems({ userId });
+
+  const { id } = params;
+
+  const budget = await getBudgetItem({
+    userId,
+    id,
+  });
+
+  return typedjson({ budget, materialListItems });
+};
+
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);
 
@@ -102,26 +116,11 @@ export async function action({ request }: ActionArgs) {
   return redirect("/budgets");
 }
 
-export const loader = async ({ request, params }: LoaderArgs) => {
-  const userId = await requireUserId(request);
-  const materialListItems = await getMaterialListItems({ userId });
-
-  const { id } = params;
-
-  const budget = await getBudgetItem({
-    userId,
-    id,
-  });
-
-  return typedjson({ budget, materialListItems });
-};
-
 export default function EditBudgetPage() {
-  const data = useTypedLoaderData<typeof loader>();
+  const { budget, materialListItems } = useTypedLoaderData<typeof loader>();
 
-  const mapItems = data?.budget?.materials.map((material) => {
-    const { id, name, unitPrice } = material.material;
-    const { quantity } = material;
+  const mapItems = budget?.materials.map(({ material, quantity }) => {
+    const { id, name, unitPrice } = material;
 
     return {
       id,
@@ -133,7 +132,7 @@ export default function EditBudgetPage() {
 
   const error = useActionData<typeof action>();
 
-  const [name, setName] = useState<string>(data?.budget?.name || "");
+  const [name, setName] = useState<string>(budget?.name || "");
 
   const [materials, setMaterials] = useState<MaterialList[]>(mapItems || []);
 
@@ -144,7 +143,7 @@ export default function EditBudgetPage() {
   const [quantity, setQuantity] = useState<string>("");
 
   const [salesPrice, setSalesPrice] = useState<string>(
-    data?.budget?.salesPrice.toString() || ""
+    budget?.salesPrice.toString() || ""
   );
 
   const [editPrice, setEditPrice] = useState<boolean>(false);
@@ -159,51 +158,24 @@ export default function EditBudgetPage() {
 
   /**
    * @description
-   * Table header of selected materials.
-   */
-  const columns = [
-    {
-      key: "material",
-      label: "MATERIAL",
-    },
-    {
-      key: "quantity",
-      label: "CANTIDAD",
-    },
-    {
-      key: "unitPrice",
-      label: "PRECIO UNITARIO",
-    },
-    {
-      key: "subtotal",
-      label: "SUBTOTAL",
-    },
-    {
-      key: "actions",
-      label: "",
-    },
-  ];
-
-  /**
-   * @description
    * Table content of selected materials.
    */
   const rows = useMemo(
     () =>
-      materials?.map((m) => {
+      materials?.map(({ id, name, quantity, unitPrice }) => {
         return {
-          key: m.id,
-          material: m.name,
-          quantity: formatInt(+m.quantity),
-          unitPrice: formatCurrency(m.unitPrice),
-          subtotal: formatCurrency(+m.quantity * m.unitPrice),
+          key: id,
+          material: name,
+          quantity: formatInt(+quantity),
+          unitPrice: formatCurrency(unitPrice),
+          subtotal: formatCurrency(+quantity * unitPrice),
           actions: (
             <Button
               isIconOnly
               color="danger"
               radius="full"
               size="sm"
-              onClick={() => handleDeleteMaterial(m.id)}
+              onClick={() => handleDeleteMaterial(id)}
             >
               <TrashIcon className={"h-5 w-5"} />
             </Button>
@@ -220,12 +192,12 @@ export default function EditBudgetPage() {
   const label = useMemo(() => {
     const [idSelected] = material;
 
-    const mat = data.materialListItems.find((m) => m.id === +idSelected);
+    const mat = materialListItems.find((m) => m.id === +idSelected);
 
     const stock = mat ? ` (stock: ${mat.stock})` : "";
 
     return `Cantidad${stock}`;
-  }, [material, data]);
+  }, [material, materialListItems]);
 
   /**
    * @description
@@ -234,8 +206,8 @@ export default function EditBudgetPage() {
   const stock = useMemo(() => {
     const [idSelected] = material;
 
-    return data.materialListItems.find((m) => m.id === +idSelected)?.stock;
-  }, [material, data]);
+    return materialListItems.find((m) => m.id === +idSelected)?.stock;
+  }, [material, materialListItems]);
 
   /**
    * @description
@@ -257,7 +229,7 @@ export default function EditBudgetPage() {
       return;
     }
 
-    const mat = data.materialListItems.find((m) => m.id === +idSelected);
+    const mat = materialListItems.find((m) => m.id === +idSelected);
 
     if (!mat) {
       toast.error("Hay un error con este material");
@@ -319,7 +291,7 @@ export default function EditBudgetPage() {
 
   const handleSubmitForm = () => {
     const body = {
-      budgetId: data?.budget?.id || null,
+      budgetId: budget?.id || null,
       name,
       oldMaterials: mapItems || null,
       materials,
@@ -332,9 +304,13 @@ export default function EditBudgetPage() {
     });
   };
 
-  const total = materials.reduce(
-    (sum, material) => sum + +material.quantity * material.unitPrice,
-    0
+  const total = useMemo(
+    () =>
+      materials.reduce(
+        (sum, material) => sum + +material.quantity * material.unitPrice,
+        0
+      ),
+    [materials]
   );
 
   return (
@@ -371,13 +347,11 @@ export default function EditBudgetPage() {
             <Select
               label="Agregar material"
               placeholder="Selecciona..."
-              items={data.materialListItems}
+              items={materialListItems}
               onChange={handleSelectionChange}
               selectedKeys={selected}
             >
-              {(material) => (
-                <SelectItem key={material.id}>{material.name}</SelectItem>
-              )}
+              {({ id, name }) => <SelectItem key={id}>{name}</SelectItem>}
             </Select>
 
             <Spacer y={4} />
@@ -526,3 +500,30 @@ type MaterialList = {
   unitPrice: number;
   quantity: string;
 };
+
+/**
+ * @description
+ * Table header of selected materials.
+ */
+const columns = [
+  {
+    key: "material",
+    label: "MATERIAL",
+  },
+  {
+    key: "quantity",
+    label: "CANTIDAD",
+  },
+  {
+    key: "unitPrice",
+    label: "PRECIO UNITARIO",
+  },
+  {
+    key: "subtotal",
+    label: "SUBTOTAL",
+  },
+  {
+    key: "actions",
+    label: "",
+  },
+];

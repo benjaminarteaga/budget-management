@@ -146,127 +146,127 @@ export default function BudgetIndexPage() {
               <TableColumn>ACCIONES</TableColumn>
             </TableHeader>
             <TableBody>
-              {budgetListItems.map((budget) => {
-                const { id, name, materials, salesPrice } = budget;
+              {budgetListItems.map(
+                ({ id, name, materials, salesPrice, status }) => {
+                  let cost = 0;
 
-                let cost = 0;
+                  const materialsArray = materials.map((material) => {
+                    cost += material.material.unitPrice * material.quantity;
 
-                const materialsArray = materials.map((material) => {
-                  cost += material.material.unitPrice * material.quantity;
+                    return {
+                      name: material.material.name,
+                      quantity: material.quantity,
+                    };
+                  });
 
-                  return {
-                    name: material.material.name,
-                    quantity: material.quantity,
-                  };
-                });
+                  const chipColor = STATUS_COLOR[status.id - 1];
 
-                const chipColor = STATUS_COLOR[budget.status.id - 1];
-
-                return (
-                  <TableRow key={id}>
-                    <TableCell>{name}</TableCell>
-                    <TableCell>
-                      {materialsArray.map(({ name }) => (
-                        <>
-                          {name}
-                          <br />
-                        </>
-                      ))}
-                    </TableCell>
-                    <TableCell className="text-end">
-                      {materialsArray.map(({ quantity }) => (
-                        <>
-                          {formatInt(quantity)}
-                          <br />
-                        </>
-                      ))}
-                    </TableCell>
-                    <TableCell className="text-end">
-                      {formatCurrency(cost)}
-                    </TableCell>
-                    <TableCell className="text-end">
-                      {formatCurrency(salesPrice)}
-                    </TableCell>
-                    <TableCell className="text-end text-green-500">
-                      {formatCurrency(salesPrice - cost)}
-                    </TableCell>
-                    <TableCell>
-                      <Dropdown>
-                        <DropdownTrigger>
-                          <Chip
-                            radius="full"
-                            variant="flat"
-                            color={chipColor}
-                            className="outline-none transition-transform"
-                            as="button"
-                          >
-                            {budget.status.name}
-                          </Chip>
-                        </DropdownTrigger>
-                        <DropdownMenu
-                          aria-label="Profile Actions"
-                          variant="flat"
-                        >
-                          {budgetStatusList.map((status) => (
-                            <DropdownItem
-                              key={status.id}
-                              className="group outline-none data-[hover=true]:bg-transparent"
+                  return (
+                    <TableRow key={id}>
+                      <TableCell>{name}</TableCell>
+                      <TableCell>
+                        {materialsArray.map(({ name }) => (
+                          <>
+                            {name}
+                            <br />
+                          </>
+                        ))}
+                      </TableCell>
+                      <TableCell className="text-end">
+                        {materialsArray.map(({ quantity }) => (
+                          <>
+                            {formatInt(quantity)}
+                            <br />
+                          </>
+                        ))}
+                      </TableCell>
+                      <TableCell className="text-end">
+                        {formatCurrency(cost)}
+                      </TableCell>
+                      <TableCell className="text-end">
+                        {formatCurrency(salesPrice)}
+                      </TableCell>
+                      <TableCell className="text-end text-green-500">
+                        {formatCurrency(salesPrice - cost)}
+                      </TableCell>
+                      <TableCell>
+                        <Dropdown>
+                          <DropdownTrigger>
+                            <Chip
+                              radius="full"
+                              variant="flat"
+                              color={chipColor}
+                              className="outline-none transition-transform"
+                              as="button"
                             >
-                              <Chip
-                                radius="full"
-                                variant="flat"
-                                color={STATUS_COLOR[status.id - 1]}
-                                className="outline-none transition-all group-hover:px-6"
-                                as="button"
-                                onClick={() =>
-                                  handleChangeStatus({
-                                    budgetId: id,
-                                    statusId: status.id,
-                                  })
-                                }
+                              {status.name}
+                            </Chip>
+                          </DropdownTrigger>
+                          <DropdownMenu
+                            aria-label="Profile Actions"
+                            variant="flat"
+                          >
+                            {budgetStatusList.map((status) => (
+                              <DropdownItem
+                                key={status.id}
+                                className="group outline-none data-[hover=true]:bg-transparent"
                               >
-                                {status.name}
-                              </Chip>
-                            </DropdownItem>
-                          ))}
-                        </DropdownMenu>
-                      </Dropdown>
-                    </TableCell>
+                                <Chip
+                                  radius="full"
+                                  variant="flat"
+                                  color={STATUS_COLOR[status.id - 1]}
+                                  className="outline-none transition-all group-hover:px-6"
+                                  as="button"
+                                  onClick={() =>
+                                    handleChangeStatus({
+                                      budgetId: id,
+                                      statusId: status.id,
+                                    })
+                                  }
+                                >
+                                  {status.name}
+                                </Chip>
+                              </DropdownItem>
+                            ))}
+                          </DropdownMenu>
+                        </Dropdown>
+                      </TableCell>
 
-                    <TableCell>
-                      <Button
-                        color="secondary"
-                        size="sm"
-                        onClick={() => handleShowDetail(id)}
-                      >
-                        Ver detalle
-                      </Button>
-                    </TableCell>
+                      <TableCell>
+                        <Button
+                          color="secondary"
+                          size="sm"
+                          onClick={() => handleShowDetail(id)}
+                        >
+                          Ver detalle
+                        </Button>
+                      </TableCell>
 
-                    <TableCell>
-                      <Link to={`edit/${id}`}>
+                      <TableCell>
+                        <Link to={`edit/${id}`}>
+                          <Button
+                            isIconOnly
+                            color="success"
+                            size="sm"
+                            className="mr-2"
+                          >
+                            <PencilIcon className={"h-4 w-4 text-white"} />
+                          </Button>
+                        </Link>
+
                         <Button
                           isIconOnly
-                          color="success"
+                          color="danger"
                           size="sm"
-                          className="mr-2"
+                          onClick={() => handleOpenModal(id)}
                         >
-                          <PencilIcon className={"h-4 w-4 text-white"} />
+                          <TrashIcon className={"h-4 w-4"} />
                         </Button>
-                      </Link>
-
-                      <Button
-                        isIconOnly
-                        color="danger"
-                        size="sm"
-                        onClick={() => handleOpenModal(id)}
-                      >
-                        <TrashIcon className={"h-4 w-4"} />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+              )}
             </TableBody>
           </Table>
         </div>
