@@ -14,6 +14,29 @@ export function getBudgetListItems({ userId }: { userId: User["id"] }) {
     },
     where: {
       userId: +userId,
+      statusId: {
+        not: 2,
+      },
+    },
+    orderBy: {
+      id: "desc",
+    },
+  });
+}
+
+export function getSalesListItems({ userId }: { userId: User["id"] }) {
+  return prisma.budget.findMany({
+    include: {
+      materials: {
+        include: {
+          material: true,
+        },
+      },
+      status: true,
+    },
+    where: {
+      userId: +userId,
+      statusId: 2,
     },
     orderBy: {
       id: "desc",

@@ -30,6 +30,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const items = [
       { name: "Materiales", url: "/materials" },
       { name: "Presupuestos", url: "/budgets" },
+      { name: "Ventas", url: "/sales" },
       { name: "Usuarios", url: "/users" },
     ];
 
