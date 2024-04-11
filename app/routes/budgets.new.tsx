@@ -164,7 +164,7 @@ export default function NewBudgetPage() {
    * Generate label for quantity, with or without stock.
    */
   const label = useMemo(() => {
-    const [idSelected] = material;
+    const idSelected = material;
 
     const mat = data.find((m) => m.id === +idSelected);
 
