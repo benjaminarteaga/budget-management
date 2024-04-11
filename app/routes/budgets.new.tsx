@@ -178,7 +178,7 @@ export default function NewBudgetPage() {
    * Get amount of available stock.
    */
   const stock = useMemo(() => {
-    const [idSelected] = material;
+    const idSelected = material;
 
     return data.find((m) => m.id === +idSelected)?.stock;
   }, [material, data]);
@@ -194,7 +194,7 @@ export default function NewBudgetPage() {
       return;
     }
 
-    const [idSelected] = material;
+    const idSelected = material;
 
     const exist = materials.find((m) => m.id === +idSelected);
 
