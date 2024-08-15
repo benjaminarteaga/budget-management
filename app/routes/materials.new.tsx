@@ -84,7 +84,7 @@ export default function NewMaterialPage() {
 
   const unitPrice = useMemo(() => {
     if (quantity > 0 && price > 0) {
-      return price / quantity + "";
+      return Math.ceil(price / quantity) + "";
     }
     return "0";
   }, [quantity, price]);
