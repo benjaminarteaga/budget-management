@@ -15,10 +15,10 @@ model User {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  password Password?
-  material Material[]
-  tools    Tool[]
-  budgets  Budget[]
+  password  Password?
+  materials Material[]
+  tools     Tool[]
+  budgets   Budget[]
 }
 
 model Password {
