@@ -29,6 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const renderMenuItems = () => {
     const items = [
       { name: "Materiales", url: "/materials" },
+      { name: "Herramientas", url: "/tools" },
       { name: "Presupuestos", url: "/budgets" },
       { name: "Ventas", url: "/sales" },
       { name: "Usuarios", url: "/users" },
