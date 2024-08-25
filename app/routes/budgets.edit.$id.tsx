@@ -190,7 +190,7 @@ export default function EditBudgetPage() {
    * Generate label for quantity, with or without stock.
    */
   const label = useMemo(() => {
-    const [idSelected] = material;
+    const idSelected = material;
 
     const mat = materialListItems.find((m) => m.id === +idSelected);
 
@@ -204,7 +204,7 @@ export default function EditBudgetPage() {
    * Get amount of available stock.
    */
   const stock = useMemo(() => {
-    const [idSelected] = material;
+    const idSelected = material;
 
     return materialListItems.find((m) => m.id === +idSelected)?.stock;
   }, [material, materialListItems]);
@@ -220,7 +220,7 @@ export default function EditBudgetPage() {
       return;
     }
 
-    const [idSelected] = material;
+    const idSelected = material;
 
     const exist = materials.find((m) => m.id === +idSelected);
 
