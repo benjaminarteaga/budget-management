@@ -46,6 +46,13 @@ import { createBudget } from "~/models/budget.server";
 
 import { formatCurrency, formatInt } from "~/utils";
 
+export const loader = async ({ request }: LoaderArgs) => {
+  const userId = await requireUserId(request);
+  const materialListItems = await getMaterialListItems({ userId });
+
+  return typedjson({ materialListItems });
+};
+
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);
 
@@ -96,15 +103,8 @@ export async function action({ request }: ActionArgs) {
   return redirect("/budgets");
 }
 
-export const loader = async ({ request }: LoaderArgs) => {
-  const userId = await requireUserId(request);
-  const materialListItems = await getMaterialListItems({ userId });
-
-  return typedjson(materialListItems);
-};
-
 export default function NewBudgetPage() {
-  const data = useTypedLoaderData<typeof loader>();
+  const { materialListItems } = useTypedLoaderData<typeof loader>();
 
   const error = useActionData<typeof action>();
 
@@ -136,20 +136,20 @@ export default function NewBudgetPage() {
    */
   const rows = useMemo(
     () =>
-      materials?.map((m) => {
+      materials?.map(({ id, name, quantity, unitPrice }) => {
         return {
-          key: m.id,
-          material: m.name,
-          quantity: formatInt(+m.quantity),
-          unitPrice: formatCurrency(m.unitPrice),
-          subtotal: formatCurrency(+m.quantity * m.unitPrice),
+          key: id,
+          material: name,
+          quantity: formatInt(+quantity),
+          unitPrice: formatCurrency(unitPrice),
+          subtotal: formatCurrency(+quantity * unitPrice),
           actions: (
             <Button
               isIconOnly
               color="danger"
               radius="full"
               size="sm"
-              onClick={() => handleDeleteMaterial(m.id)}
+              onClick={() => handleDeleteMaterial(id)}
             >
               <TrashIcon className={"h-5 w-5"} />
             </Button>
@@ -166,12 +166,12 @@ export default function NewBudgetPage() {
   const label = useMemo(() => {
     const idSelected = material;
 
-    const mat = data.find((m) => m.id === +idSelected);
+    const mat = materialListItems.find((m) => m.id === +idSelected);
 
     const stock = mat ? ` (stock: ${mat.stock})` : "";
 
     return `Cantidad${stock}`;
-  }, [material, data]);
+  }, [material, materialListItems]);
 
   /**
    * @description
@@ -180,8 +180,8 @@ export default function NewBudgetPage() {
   const stock = useMemo(() => {
     const idSelected = material;
 
-    return data.find((m) => m.id === +idSelected)?.stock;
-  }, [material, data]);
+    return materialListItems.find((m) => m.id === +idSelected)?.stock;
+  }, [material, materialListItems]);
 
   /**
    * @description
@@ -203,7 +203,7 @@ export default function NewBudgetPage() {
       return;
     }
 
-    const mat = data.find((m) => m.id === +idSelected);
+    const mat = materialListItems.find((m) => m.id === +idSelected);
 
     if (!mat) {
       toast.error("Hay un error con este material");
@@ -319,13 +319,11 @@ export default function NewBudgetPage() {
             <Select
               label="Agregar material"
               placeholder="Selecciona..."
-              items={data}
+              items={materialListItems}
               onChange={handleSelectionChange}
               selectedKeys={selected}
             >
-              {(material) => (
-                <SelectItem key={material.id}>{material.name}</SelectItem>
-              )}
+              {({ id, name }) => <SelectItem key={id}>{name}</SelectItem>}
             </Select>
 
             <Spacer y={4} />
