@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ChangeEvent } from "react";
 
 import type { LoaderArgs } from "@remix-run/node";
 import { Link, useFetcher } from "@remix-run/react";
@@ -9,11 +10,15 @@ import type { Prisma } from "@prisma/client";
 
 import {
   Button,
+  Input,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Pagination,
+  Select,
+  SelectItem,
   Spacer,
   Table,
   TableBody,
@@ -23,6 +28,8 @@ import {
   TableRow,
   useDisclosure,
 } from "@nextui-org/react";
+
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 import {
   PencilIcon,
@@ -52,6 +59,12 @@ export default function MaterialIndexPage() {
 
   const [toDelete, setToDelete] = useState<Materials>();
 
+  const [page, setPage] = useState(1);
+
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  const [filterValue, setFilterValue] = useState("");
+
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const fetcher = useFetcher();
@@ -76,6 +89,51 @@ export default function MaterialIndexPage() {
       fetcher.submit({}, { method: "post", action: `delete/${toDelete?.id}` });
   };
 
+  const onSearchChange = useCallback((value?: string) => {
+    if (value) {
+      setFilterValue(value);
+      setPage(1);
+    } else {
+      setFilterValue("");
+    }
+  }, []);
+
+  const onClear = useCallback(() => {
+    setFilterValue("");
+    setPage(1);
+  }, []);
+
+  const hasSearchFilter = Boolean(filterValue);
+
+  const filteredMaterials = useMemo(() => {
+    let filteredItems = [...materialListItems];
+
+    if (hasSearchFilter) {
+      filteredItems = filteredItems.filter((item) =>
+        item.name.toLowerCase().includes(filterValue.toLowerCase())
+      );
+    }
+
+    return filteredItems;
+  }, [materialListItems, filterValue, hasSearchFilter]);
+
+  const pages = Math.ceil(filteredMaterials.length / rowsPerPage);
+
+  const materialListPage = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+
+    return filteredMaterials.slice(start, end);
+  }, [page, rowsPerPage, filteredMaterials]);
+
+  const rowsOptions = [
+    { value: 5 },
+    { value: 10 },
+    { value: 20 },
+    { value: 30 },
+    { value: 50 },
+  ];
+
   return (
     <>
       <Link to="new">
@@ -92,7 +150,65 @@ export default function MaterialIndexPage() {
 
       <Spacer y={4} />
 
-      <Table layout="fixed" aria-label="Lista de materiales">
+      <Table
+        layout="fixed"
+        aria-label="Lista de materiales"
+        topContent={
+          <div className="flex flex-col gap-4">
+            <Input
+              isClearable
+              className="w-max"
+              placeholder="Buscar por nombre..."
+              startContent={<MagnifyingGlassIcon className={"h-4 w-4"} />}
+              value={filterValue}
+              onClear={() => onClear()}
+              onValueChange={onSearchChange}
+            />
+
+            <div className="flex items-end justify-between gap-6">
+              <span>
+                Mostrando{" "}
+                <span className="font-bold">
+                  {materialListPage.length} de {filteredMaterials.length}
+                </span>{" "}
+                materiales
+              </span>
+
+              <Select
+                classNames={{
+                  base: "w-max",
+                  label: "mr-6",
+                }}
+                size="sm"
+                label="Items por página"
+                placeholder="Selecciona..."
+                items={rowsOptions}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                  setRowsPerPage(+e.target.value);
+                }}
+                selectedKeys={[String(rowsPerPage)]}
+              >
+                {({ value }) => (
+                  <SelectItem key={value}>{String(value)}</SelectItem>
+                )}
+              </Select>
+            </div>
+          </div>
+        }
+        bottomContent={
+          <div className="flex w-full justify-center gap-6">
+            <Pagination
+              isCompact
+              showControls
+              showShadow
+              color="secondary"
+              page={page}
+              total={pages}
+              onChange={(page) => setPage(page)}
+            />
+          </div>
+        }
+      >
         <TableHeader>
           <TableColumn>NOMBRE</TableColumn>
           <TableColumn>STOCK</TableColumn>
@@ -102,7 +218,7 @@ export default function MaterialIndexPage() {
           <TableColumn>ACCIONES</TableColumn>
         </TableHeader>
         <TableBody>
-          {materialListItems.map(
+          {materialListPage.map(
             ({ id, name, stock, quantity, price, unitPrice }) => (
               <TableRow key={id}>
                 <TableCell>{name}</TableCell>

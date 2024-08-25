@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ChangeEvent } from "react";
 
 import type { LoaderArgs } from "@remix-run/node";
 import { Link, useFetcher } from "@remix-run/react";
@@ -27,10 +28,14 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+  Input,
+  Select,
+  SelectItem,
+  Pagination,
 } from "@nextui-org/react";
 
 import { PencilIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
-import { TrashIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 import { requireUserId } from "~/session.server";
 import {
@@ -67,6 +72,12 @@ export default function BudgetIndexPage() {
   const [detail, setDetail] = useState<BudgetWithRelations>();
 
   const [toDelete, setToDelete] = useState<BudgetWithRelations>();
+
+  const [page, setPage] = useState(1);
+
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  const [filterValue, setFilterValue] = useState("");
 
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
@@ -112,6 +123,51 @@ export default function BudgetIndexPage() {
     );
   };
 
+  const onSearchChange = useCallback((value?: string) => {
+    if (value) {
+      setFilterValue(value);
+      setPage(1);
+    } else {
+      setFilterValue("");
+    }
+  }, []);
+
+  const onClear = useCallback(() => {
+    setFilterValue("");
+    setPage(1);
+  }, []);
+
+  const hasSearchFilter = Boolean(filterValue);
+
+  const filteredBudgets = useMemo(() => {
+    let filteredItems = [...budgetListItems];
+
+    if (hasSearchFilter) {
+      filteredItems = filteredItems.filter((item) =>
+        item.name.toLowerCase().includes(filterValue.toLowerCase())
+      );
+    }
+
+    return filteredItems;
+  }, [budgetListItems, filterValue, hasSearchFilter]);
+
+  const pages = Math.ceil(filteredBudgets.length / rowsPerPage);
+
+  const budgetListPage = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+
+    return filteredBudgets.slice(start, end);
+  }, [page, rowsPerPage, filteredBudgets]);
+
+  const rowsOptions = [
+    { value: 5 },
+    { value: 10 },
+    { value: 20 },
+    { value: 30 },
+    { value: 50 },
+  ];
+
   return (
     <>
       <div className="flex gap-6">
@@ -133,6 +189,61 @@ export default function BudgetIndexPage() {
           <Table
             layout="fixed"
             classNames={{ th: "text-center", td: "text-center" }}
+            topContent={
+              <div className="flex flex-col gap-4">
+                <Input
+                  isClearable
+                  className="w-max"
+                  placeholder="Buscar por nombre..."
+                  startContent={<MagnifyingGlassIcon className={"h-4 w-4"} />}
+                  value={filterValue}
+                  onClear={() => onClear()}
+                  onValueChange={onSearchChange}
+                />
+
+                <div className="flex items-end justify-between gap-6">
+                  <span>
+                    Mostrando{" "}
+                    <span className="font-bold">
+                      {budgetListPage.length} de {filteredBudgets.length}
+                    </span>{" "}
+                    presupuestos
+                  </span>
+
+                  <Select
+                    classNames={{
+                      base: "w-max",
+                      label: "mr-6",
+                    }}
+                    size="sm"
+                    label="Items por página"
+                    placeholder="Selecciona..."
+                    items={rowsOptions}
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                      setRowsPerPage(+e.target.value);
+                    }}
+                    selectedKeys={[String(rowsPerPage)]}
+                  >
+                    {({ value }) => (
+                      <SelectItem key={value}>{String(value)}</SelectItem>
+                    )}
+                  </Select>
+                </div>
+              </div>
+            }
+            bottomContent={
+              <div className="flex w-full justify-center gap-6">
+                <Pagination
+                  isCompact
+                  showControls
+                  showShadow
+                  color="secondary"
+                  page={page}
+                  total={pages}
+                  onChange={(page) => setPage(page)}
+                />
+              </div>
+            }
           >
             <TableHeader>
               <TableColumn>NOMBRE</TableColumn>
@@ -146,7 +257,7 @@ export default function BudgetIndexPage() {
               <TableColumn>ACCIONES</TableColumn>
             </TableHeader>
             <TableBody>
-              {budgetListItems.map(
+              {budgetListPage.map(
                 ({ id, name, materials, salesPrice, status }) => {
                   let cost = 0;
 
