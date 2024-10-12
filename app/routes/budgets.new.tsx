@@ -20,6 +20,7 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Checkbox,
   Divider,
   Input,
   Select,
@@ -42,16 +43,18 @@ import {
 
 import { requireUserId } from "~/session.server";
 import { getMaterialListItems } from "~/models/material.server";
+import { getToolListItems } from "~/models/tool.server";
 import { createBudget } from "~/models/budget.server";
 
 import { formatCurrency, formatInt } from "~/utils";
 
-export const loader = async ({ request }: LoaderArgs) => {
-  const userId = await requireUserId(request);
-  const materialListItems = await getMaterialListItems({ userId });
+import type { Tool } from "@prisma/client";
 
-  return typedjson({ materialListItems });
-};
+type SelectedTools = {
+  id: number;
+  amount: number;
+  selected?: boolean;
+}[];
 
 export async function action({ request }: ActionArgs) {
   const userId = await requireUserId(request);
@@ -60,10 +63,12 @@ export async function action({ request }: ActionArgs) {
     name,
     materials,
     salesPrice,
+    tools,
   }: {
     name: string;
     materials: MaterialList[];
     salesPrice: string;
+    tools: SelectedTools;
   } = await request.json();
 
   if (typeof name !== "string" || name.length === 0) {
@@ -96,6 +101,7 @@ export async function action({ request }: ActionArgs) {
   await createBudget({
     name,
     materials,
+    tools,
     salesPrice: +salesPrice,
     userId,
   });
@@ -103,8 +109,17 @@ export async function action({ request }: ActionArgs) {
   return redirect("/budgets");
 }
 
+export const loader = async ({ request }: LoaderArgs) => {
+  const userId = await requireUserId(request);
+  const materialListItems = await getMaterialListItems({ userId });
+  const toolsListItems = await getToolListItems({ userId });
+
+  return typedjson({ materialListItems, toolsListItems });
+};
+
 export default function NewBudgetPage() {
-  const { materialListItems } = useTypedLoaderData<typeof loader>();
+  const { materialListItems, toolsListItems } =
+    useTypedLoaderData<typeof loader>();
 
   const error = useActionData<typeof action>();
 
@@ -121,6 +136,10 @@ export default function NewBudgetPage() {
   const [salesPrice, setSalesPrice] = useState<string>("");
 
   const [editPrice, setEditPrice] = useState<boolean>(false);
+
+  const [tools, setTools] = useState<SelectedTools>(
+    toolsListItems.map((t) => ({ id: t.id, amount: 0, selected: false }))
+  );
 
   const submit = useSubmit();
 
@@ -158,6 +177,36 @@ export default function NewBudgetPage() {
       }),
     [materials]
   );
+
+  /**
+   * @description
+   * Table content of tools.
+   */
+  const rowsTools = toolsListItems?.map((t) => {
+    const tool = tools.find((tool) => tool.id === t.id);
+
+    return {
+      key: t.id,
+      actions: (
+        <Checkbox
+          isSelected={tool?.selected}
+          onChange={() => handleCheckboxChange(t.id)}
+        />
+      ),
+      name: t.name,
+      quantity: formatInt(+t.quantity),
+      unitPrice: formatCurrency(t.unitPrice),
+      totalPrice: formatCurrency(t.totalPrice),
+      amount: (
+        <Input
+          type="number"
+          value={tool?.amount.toString() || ""}
+          onChange={(e) => handleAmountChange(t.id, e.target.value)}
+        />
+      ),
+      percent: `${calculatePercent(t).toFixed(2)}%`,
+    };
+  });
 
   /**
    * @description
@@ -244,6 +293,36 @@ export default function NewBudgetPage() {
     setMaterial(e.target.value);
   };
 
+  const handleCheckboxChange = (id: number) => {
+    setTools((prev) => {
+      const newTools = [...prev];
+
+      newTools[id].selected = !newTools[id].selected;
+
+      return newTools;
+    });
+  };
+
+  const handleAmountChange = (id: number, amount: string) => {
+    setTools((prev) => {
+      const newTools = [...prev];
+
+      const updatedTool = newTools.find((t) => t.id === id);
+
+      if (updatedTool) {
+        updatedTool.amount = parseInt(amount) || 0;
+        updatedTool.selected = Boolean(parseInt(amount));
+      }
+
+      return newTools;
+    });
+  };
+
+  function calculatePercent(tool: Tool) {
+    const amount = tools.find((t) => t.id === tool.id)?.amount || 0;
+    return (amount * 100) / tool.totalPrice || 0;
+  }
+
   const validate = useCallback(() => {
     const errors = [];
 
@@ -268,6 +347,12 @@ export default function NewBudgetPage() {
       name,
       materials,
       salesPrice,
+      tools: tools
+        .filter((t) => t.selected)
+        .map((t) => ({
+          id: t.id,
+          amount: t.amount,
+        })),
     };
 
     submit(body, {
@@ -276,7 +361,7 @@ export default function NewBudgetPage() {
     });
   };
 
-  const total = useMemo(
+  const totalMaterials = useMemo(
     () =>
       materials.reduce(
         (sum, material) => sum + +material.quantity * material.unitPrice,
@@ -285,8 +370,22 @@ export default function NewBudgetPage() {
     [materials]
   );
 
+  const totalSelectedToolsAmount = useMemo(() => {
+    return tools.reduce((total, tool, index) => {
+      if (tool.selected) {
+        return total + (tool.amount || 0);
+      }
+      return total;
+    }, 0);
+  }, [tools]);
+
+  const total = useMemo(
+    () => totalMaterials + totalSelectedToolsAmount,
+    [totalMaterials, totalSelectedToolsAmount]
+  );
+
   return (
-    <Card className="mx-auto max-w-[800px]">
+    <Card className="mx-auto max-w-full">
       <CardHeader className="flex gap-3">
         <h1 className="font-medium">
           <span className="text-3xl">📑</span> Nuevo presupuesto
@@ -387,6 +486,20 @@ export default function NewBudgetPage() {
                   <Divider />
 
                   <div className="flex justify-between px-3">
+                    <span className="font-bold">MATERIALES</span>
+                    <span className="font-bold">
+                      {formatCurrency(totalMaterials)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between px-3">
+                    <span className="font-bold">HERRAMIENTAS</span>
+                    <span className="font-bold">
+                      {formatCurrency(totalSelectedToolsAmount)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between px-3">
                     <span className="font-bold">TOTAL</span>
                     <span className="font-bold">{formatCurrency(total)}</span>
                   </div>
@@ -460,6 +573,30 @@ export default function NewBudgetPage() {
               </TableBody>
             </Table>
           </div>
+
+          <Divider orientation="vertical" className="h-auto" />
+
+          <div className="flex-auto">
+            <Table
+              aria-label="Example table with dynamic content"
+              removeWrapper
+            >
+              <TableHeader columns={columnsTools}>
+                {(column) => (
+                  <TableColumn key={column.key}>{column.label}</TableColumn>
+                )}
+              </TableHeader>
+              <TableBody items={rowsTools}>
+                {(item) => (
+                  <TableRow key={item.key}>
+                    {(columnKey) => (
+                      <TableCell>{getKeyValue(item, columnKey)}</TableCell>
+                    )}
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </CardBody>
     </Card>
@@ -497,5 +634,40 @@ const columns = [
   {
     key: "actions",
     label: "",
+  },
+];
+
+/**
+ * @description
+ * Table header of tools.
+ */
+const columnsTools = [
+  {
+    key: "actions",
+    label: "",
+  },
+  {
+    key: "name",
+    label: "NOMBRE",
+  },
+  {
+    key: "quantity",
+    label: "CANTIDAD",
+  },
+  {
+    key: "unitPrice",
+    label: "PRECIO UNITARIO",
+  },
+  {
+    key: "totalPrice",
+    label: "PRECIO TOTAL",
+  },
+  {
+    key: "amount",
+    label: "CANTIDAD",
+  },
+  {
+    key: "percent",
+    label: "% DE RECUPERACIÓN",
   },
 ];

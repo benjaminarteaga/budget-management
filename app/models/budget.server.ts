@@ -10,6 +10,11 @@ export function getBudgetListItems({ userId }: { userId: User["id"] }) {
           material: true,
         },
       },
+      tools: {
+        include: {
+          tool: true,
+        },
+      },
       status: true,
     },
     where: {
@@ -73,12 +78,17 @@ export function getBudgetItem({
 export function createBudget({
   name,
   materials,
+  tools,
   salesPrice,
   userId,
 }: Pick<Budget, "name"> & {
   materials: {
     id: number;
     quantity: string;
+  }[];
+  tools: {
+    id: number;
+    amount: number;
   }[];
   salesPrice: number;
   userId: User["id"];
@@ -92,6 +102,18 @@ export function createBudget({
       },
     },
   }));
+
+  const toolsArray = tools
+    .filter((tool) => tool)
+    .map((tool) => ({
+      quantity: +tool.amount,
+      assignedAt: new Date(),
+      tool: {
+        connect: {
+          id: +tool.id,
+        },
+      },
+    }));
 
   const decrementMaterials = materials.map((m) =>
     prisma.material.update({
@@ -112,6 +134,9 @@ export function createBudget({
       salesPrice,
       materials: {
         create: materialsArray,
+      },
+      tools: {
+        create: toolsArray,
       },
       user: {
         connect: {
