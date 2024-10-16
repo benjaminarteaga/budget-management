@@ -22,7 +22,7 @@ export default function BudgetDetail({
 }: {
   data: BudgetWithRelations | undefined;
 }) {
-  const columns = [
+  const columnsMaterials = [
     {
       key: "material",
       label: "MATERIAL",
@@ -41,7 +41,26 @@ export default function BudgetDetail({
     },
   ];
 
-  const rows = data?.materials?.map((m, index) => {
+  const columnsTools = [
+    {
+      key: "tool",
+      label: "HERRAMIENTA",
+    },
+    {
+      key: "totalCost",
+      label: "COSTO",
+    },
+    {
+      key: "amount",
+      label: "MONTO",
+    },
+    {
+      key: "percentage",
+      label: "PORCENTAJE",
+    },
+  ];
+
+  const rowsMaterials = data?.materials?.map((m, index) => {
     return {
       key: index,
       material: m.material.name,
@@ -51,10 +70,21 @@ export default function BudgetDetail({
     };
   });
 
-  const total = data?.materials.reduce(
-    (sum, material) => sum + +material.quantity * material.material.unitPrice,
-    0
-  );
+  const rowsTools = data?.tools?.map((m, index) => {
+    return {
+      key: index,
+      tool: m.tool.name,
+      totalCost: formatCurrency(m.tool.totalPrice),
+      amount: formatCurrency(m.quantity),
+      percentage: `${((m.quantity * 100) / m.tool.totalPrice).toFixed(2)}%`,
+    };
+  });
+
+  const totalMaterialCost = data?.result.totalMaterialCost || 0;
+
+  const totalToolAssigned = data?.result.totalToolAssigned || 0;
+
+  const total = totalMaterialCost + totalToolAssigned;
 
   return (
     <Card className="mx-auto max-w-[600px]">
@@ -86,21 +116,23 @@ export default function BudgetDetail({
               <Divider />
 
               <div className="flex justify-between px-3">
-                <span className="font-bold">TOTAL</span>
-                <span className="font-bold">
-                  {total && formatCurrency(total)}
+                <span className="font-semibold">Total Materiales</span>
+                <span className="font-semibold">
+                  {totalMaterialCost && formatCurrency(totalMaterialCost)}
                 </span>
               </div>
+
+              <Divider />
             </>
           }
           aria-label="Materials on budget"
         >
-          <TableHeader columns={columns}>
+          <TableHeader columns={columnsMaterials}>
             {(column) => (
               <TableColumn key={column.key}>{column.label}</TableColumn>
             )}
           </TableHeader>
-          <TableBody items={rows}>
+          <TableBody items={rowsMaterials}>
             {(item) => (
               <TableRow key={item.key}>
                 {(columnKey) => (
@@ -114,6 +146,57 @@ export default function BudgetDetail({
             )}
           </TableBody>
         </Table>
+
+        <Spacer y={4} />
+
+        <Table
+          removeWrapper
+          layout="fixed"
+          classNames={{
+            th: "text-center",
+            emptyWrapper: "h-24",
+          }}
+          bottomContent={
+            <>
+              <Divider />
+
+              <div className="flex justify-between px-3">
+                <span className="font-semibold">Total Herramientas</span>
+                <span className="font-semibold">
+                  {totalToolAssigned && formatCurrency(totalToolAssigned)}
+                </span>
+              </div>
+
+              <Divider />
+            </>
+          }
+          aria-label="Tools on budget"
+        >
+          <TableHeader columns={columnsTools}>
+            {(column) => (
+              <TableColumn key={column.key}>{column.label}</TableColumn>
+            )}
+          </TableHeader>
+          <TableBody
+            items={rowsTools}
+            emptyContent={"No se asignaron herramientas."}
+          >
+            {(item) => (
+              <TableRow key={item.key}>
+                {(columnKey) => (
+                  <TableCell className={columnKey !== "tool" ? "text-end" : ""}>
+                    {getKeyValue(item, columnKey)}
+                  </TableCell>
+                )}
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+
+        <div className="my-4 flex justify-between px-3">
+          <span className="font-bold">TOTAL GASTO</span>
+          <span className="font-bold">{total && formatCurrency(total)}</span>
+        </div>
       </CardBody>
     </Card>
   );

@@ -39,6 +39,7 @@ import { TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 import { requireUserId } from "~/session.server";
 import {
+  getBudgetResults,
   getBudgetListItems,
   type getBudgetItem,
   getBudgetStatusList,
@@ -48,9 +49,15 @@ import BudgetDetail from "~/components/BudgetDetail";
 
 import { formatCurrency, formatInt } from "~/utils";
 
-export type BudgetWithRelations = Prisma.PromiseReturnType<
-  typeof getBudgetItem
+export type BudgetItemType = Prisma.PromiseReturnType<typeof getBudgetItem>;
+
+export type BudgetResultsType = Prisma.PromiseReturnType<
+  typeof getBudgetResults
 >;
+
+export type BudgetWithRelations = BudgetItemType & {
+  result: Omit<BudgetResultsType[number], "budgetId">;
+};
 
 type ChangeStatusParams = {
   budgetId: number;
@@ -61,17 +68,36 @@ export const loader = async ({ request }: LoaderArgs) => {
   const userId = await requireUserId(request);
   const budgetListItems = await getBudgetListItems({ userId });
   const budgetStatusList = await getBudgetStatusList();
+  const budgetResults = await getBudgetResults({ userId });
 
-  return typedjson({ budgetListItems, budgetStatusList });
+  const budgets = budgetListItems.map((budget) => {
+    const defaultResult = {
+      budgetId: budget.id,
+      salesPrice: budget.salesPrice,
+      totalMaterialCost: 0,
+      totalToolAssigned: 0,
+      profit: 0,
+    };
+
+    const { budgetId, ...resultWithoutBudgetId } =
+      budgetResults.find((result) => result.budgetId === budget.id) ||
+      defaultResult;
+
+    return {
+      ...budget,
+      result: resultWithoutBudgetId,
+    };
+  });
+
+  return typedjson({ budgets, budgetStatusList });
 };
 
 export default function BudgetIndexPage() {
-  const { budgetListItems, budgetStatusList } =
-    useTypedLoaderData<typeof loader>();
+  const { budgets, budgetStatusList } = useTypedLoaderData<typeof loader>();
 
-  const [detail, setDetail] = useState<BudgetWithRelations>();
+  const [detail, setDetail] = useState<BudgetWithRelations | null>();
 
-  const [toDelete, setToDelete] = useState<BudgetWithRelations>();
+  const [toDelete, setToDelete] = useState<BudgetWithRelations | null>();
 
   const [page, setPage] = useState(1);
 
@@ -94,11 +120,11 @@ export default function BudgetIndexPage() {
       return;
     }
 
-    setDetail(budgetListItems.find((budget) => budget.id === id));
+    setDetail(budgets.find((budget) => budget.id === id));
   };
 
   const handleOpenModal = (id: number) => {
-    setToDelete(budgetListItems.find((budget) => budget.id === id));
+    setToDelete(budgets.find((budget) => budget.id === id));
     onOpen();
   };
 
@@ -140,7 +166,7 @@ export default function BudgetIndexPage() {
   const hasSearchFilter = Boolean(filterValue);
 
   const filteredBudgets = useMemo(() => {
-    let filteredItems = [...budgetListItems];
+    let filteredItems = [...budgets];
 
     if (hasSearchFilter) {
       filteredItems = filteredItems.filter((item) =>
@@ -149,7 +175,7 @@ export default function BudgetIndexPage() {
     }
 
     return filteredItems;
-  }, [budgetListItems, filterValue, hasSearchFilter]);
+  }, [budgets, filterValue, hasSearchFilter]);
 
   const pages = Math.ceil(filteredBudgets.length / rowsPerPage);
 
@@ -258,17 +284,11 @@ export default function BudgetIndexPage() {
             </TableHeader>
             <TableBody>
               {budgetListPage.map(
-                ({ id, name, materials, salesPrice, status }) => {
-                  let cost = 0;
-
-                  const materialsArray = materials.map((material) => {
-                    cost += material.material.unitPrice * material.quantity;
-
-                    return {
-                      name: material.material.name,
-                      quantity: material.quantity,
-                    };
-                  });
+                ({ id, name, materials, salesPrice, status, result }) => {
+                  const materialsArray = materials.map((material) => ({
+                    name: material.material.name,
+                    quantity: material.quantity,
+                  }));
 
                   const chipColor = STATUS_COLOR[status.id - 1];
 
@@ -292,13 +312,15 @@ export default function BudgetIndexPage() {
                         ))}
                       </TableCell>
                       <TableCell className="text-end">
-                        {formatCurrency(cost)}
+                        {formatCurrency(
+                          result.totalMaterialCost + result.totalToolAssigned
+                        )}
                       </TableCell>
                       <TableCell className="text-end">
                         {formatCurrency(salesPrice)}
                       </TableCell>
                       <TableCell className="text-end text-green-500">
-                        {formatCurrency(salesPrice - cost)}
+                        {formatCurrency(result.profit)}
                       </TableCell>
                       <TableCell>
                         <Dropdown>

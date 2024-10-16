@@ -29,6 +29,11 @@ export function getBudgetListItems({ userId }: { userId: User["id"] }) {
   });
 }
 
+export function getBudgetResults({ userId }: { userId: User["id"] }) {
+  //TODO: add where clause to filter by userId
+  return prisma.budgetResultsView.findMany();
+}
+
 export function getSalesListItems({ userId }: { userId: User["id"] }) {
   return prisma.budget.findMany({
     include: {
@@ -68,6 +73,11 @@ export function getBudgetItem({
       materials: {
         include: {
           material: true,
+        },
+      },
+      tools: {
+        include: {
+          tool: true,
         },
       },
       status: true,
